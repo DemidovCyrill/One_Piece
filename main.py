@@ -10,7 +10,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 basa = requests.get('https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls').json()
 reply_keyboard = [['/help', '/fruit'],
-                  ['/parsing', '/quiz']]
+                  ['/parsing', '/fruit', '/quiz']]
 markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
 echo_data = ['Простите, но я не понимаю что вы говорите...', 'Надо же, не знал что это есть в мире One Piece!',
              'Если это есть в One Piece, то королём пиратов станет Усопп!',
@@ -32,6 +32,10 @@ async def fruit(update, context):
     await update.message.reply_text(basa[i]['line'])
     await update.message.reply_text(basa[i]['image'], reply_markup=markup)
 
+
+'''async def fruit(update, context):
+    await update.message.reply_text('same text', reply_markup=markup)'''
+
 async def parsing(update, context):
     await update.message.reply_text("parsing", reply_markup=markup)
 
@@ -43,6 +47,7 @@ async def quiz(update, context):
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("help", help))
+    application.add_handler(CommandHandler("quiz", quiz))
     application.add_handler(CommandHandler("fruit", fruit))
     application.add_handler(CommandHandler("parsing", parsing))
     application.add_handler(CommandHandler("start", help))
