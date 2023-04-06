@@ -27,7 +27,7 @@ async def help(update, context):
     await update.message.reply_text("help", reply_markup=markup)
 
 async def fruit(update, context):
-    i = randint(0, 59)
+    i = randint(0, 61)
     await update.message.reply_text(basa[i]['name'])
     await update.message.reply_text(basa[i]['line'])
     await update.message.reply_text(basa[i]['image'], reply_markup=markup)
