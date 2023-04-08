@@ -106,7 +106,7 @@ async def fruit(update, context):
     latest_mode = frut_buttons
 
 async def random_fruit(update, context):
-    i = randint(0, len(basa))
+    i = randint(1, len(basa) - 1)
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
     C.execute(f"select f_{i} from orders where token={id_user}")
     znach = int(C.fetchall()[0][0])
@@ -122,7 +122,7 @@ async def random_fruit(update, context):
 
 async def next_fruit(update, context):
     global number_fruit_in_order
-    number_fruit_in_order = (number_fruit_in_order + 1) % (len(basa) - 1)
+    number_fruit_in_order = (number_fruit_in_order + 1) % (len(basa))
     try:
         x = basa[number_fruit_in_order]['name']
     except Exception:
@@ -141,7 +141,7 @@ async def next_fruit(update, context):
     latest_mode = frut_random_keyboard
 async def previous(update, context):
     global number_fruit_in_order
-    number_fruit_in_order = (number_fruit_in_order - 1) % (len(basa) - 1)
+    number_fruit_in_order = (number_fruit_in_order - 1) % (len(basa))
     try:
         x = basa[number_fruit_in_order]['name']
     except Exception:
