@@ -87,8 +87,10 @@ async def fruit(update, context):
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
     C.execute(f"select * from orders where token={id_user}")
     if C.fetchall() == []:
-        C.execute(f"""INSERT INTO orders 
-           VALUES('{id_user}'{', 0' * len(basa)});""")
+        cursor = BASE.execute('select * from orders')
+        names = list(map(lambda x: x[0], cursor.description))
+        C.execute(f"""INSERT INTO orders({', '.join(names)})
+           VALUES('{id_user}'{', 0' * (len(basa) + 1)});""")
         BASE.commit()
     global number_fruit_in_order
     # Обнуляем счётчик режима фруктов по порядку
@@ -212,17 +214,17 @@ async def fruit_statistics(update, context):
     ind_tenth = m.index(tenth)
     m[ind_tenth] = 0
     await update.message.reply_text(f'''
-    Твои самые часто попадающиеся Дьявольские фрукты:
-    1-е место - {basa[ind_first]['name']} ({first} раз)
-    2-е место - {basa[ind_second]['name']} ({second} раз)
-    3-е место - {basa[ind_third]['name']} ({third} раз)
-    4-е место - {basa[ind_fourth]['name']} ({fourth} раз)
-    5-е место - {basa[ind_fifth]['name']} ({fifth} раз)
-    6-е место - {basa[ind_sixth]['name']} ({sixth} раз)
-    7-е место - {basa[ind_seventh]['name']} ({seventh} раз)
-    8-е место - {basa[ind_eighth]['name']} ({eighth} раз)
-    9-е место - {basa[ind_ninth]['name']} ({ninth} раз)
-    10-е место - {basa[ind_tenth]['name']} ({tenth} раз)
+Твои самые часто попадающиеся Дьявольские фрукты:
+  1-е место - {basa[ind_first]['name']} ({first} раз)
+  2-е место - {basa[ind_second]['name']} ({second} раз)
+  3-е место - {basa[ind_third]['name']} ({third} раз)
+  4-е место - {basa[ind_fourth]['name']} ({fourth} раз)
+  5-е место - {basa[ind_fifth]['name']} ({fifth} раз)
+  6-е место - {basa[ind_sixth]['name']} ({sixth} раз)
+  7-е место - {basa[ind_seventh]['name']} ({seventh} раз)
+  8-е место - {basa[ind_eighth]['name']} ({eighth} раз)
+  9-е место - {basa[ind_ninth]['name']} ({ninth} раз)
+  10-е место - {basa[ind_tenth]['name']} ({tenth} раз)
     ''', reply_markup=frut_buttons)
     global latest_mode
     latest_mode = frut_buttons
