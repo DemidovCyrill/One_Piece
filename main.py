@@ -7,13 +7,13 @@ from random import choice, randint
 from telegram.ext import Application, MessageHandler, filters
 from telegram import ReplyKeyboardMarkup
 BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
-#здесь описание индекса, на котором пользователь остановился в разделе "фрукт но порядку"
-number_fruit_in_order = 0
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 basa = requests.get('https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls').json()
+basa_quiz = requests.get('https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls').json()
 
+print(basa_quiz)
 #далее описываются статические клавиатуры
 reply_keyboard = [['/fruit'], ['/parsing'], ['/quiz']]
 main_buttons = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
@@ -23,6 +23,9 @@ frut_buttons = ReplyKeyboardMarkup(frut_keyboard, one_time_keyboard=True)
 
 frut_random_keyboard = [['/previous', '/help', '/next_fruit']]
 frut_random_keyboard = ReplyKeyboardMarkup(frut_random_keyboard, one_time_keyboard=True)
+
+start_keyboard = [['/start_quiz'], ['/rename']]
+start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 # В этой переменной хранится значения последней вызываемой клавиатуры
 # у пользователя будет складываться ощущение, что он находится
@@ -56,8 +59,18 @@ async def users_text(update, context):
     Она также может быть вызвана в любое время режима, не повлияв на него, ведь
     вконце мы возврещаем набор кнопок latest_mode, который хранит последний вызов клавиатуры"""
     global latest_mode
-    #u_text = update.message.text
-    #if 'но Ми' in u_text or 'но ми' in u_text:
+    if 'quiz_name' in context.user_data:
+        id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
+        C.execute(f"""Update quiz_table set name = '{update.message.text}' where token = {id_user}""")
+        BASE.commit()
+        global start_keyboard
+        await update.message.reply_text(f'''{update.message.text} - Отличное имя! Я его запомню.
+Если имя всё-таки имя не подходит, нажмите rename.
+А теперь приступим к викторине!
+Нажмите Начать!''', reply_markup=start_keyboard)
+        latest_mode = start_keyboard
+        context.user_data.clear()
+        return
     await update.message.reply_text(choice(echo_data), reply_markup=latest_mode)
     #
 
@@ -74,7 +87,7 @@ async def help(update, context):
 Здесь вы можете:
 /fruit - узнать про любой фрукт;
 /parsing - задать интересующие вопросы (нет);
-/quiz - сыграть со мной в наинтерснейшую викторину (нет);
+/quiz - сыграть со мной в наинтерснейшую викторину (+-);
 
 На этом пока что всё, сейчас ведётся активная разработка!
 ''', reply_markup=main_buttons)
@@ -92,9 +105,7 @@ async def fruit(update, context):
         C.execute(f"""INSERT INTO orders({', '.join(names)})
            VALUES('{id_user}'{', 0' * (len(basa) + 1)});""")
         BASE.commit()
-    global number_fruit_in_order
-    # Обнуляем счётчик режима фруктов по порядку
-    number_fruit_in_order = 0
+        context.user_data['number_fruit_in_order'] = 0
     await update.message.reply_text('''
     Отлично! Вы выбрали режим фруктов!
     
@@ -123,59 +134,55 @@ async def random_fruit(update, context):
 
 
 async def next_fruit(update, context):
-    global number_fruit_in_order
-    number_fruit_in_order = (number_fruit_in_order + 1) % (len(basa))
+    context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] + 1) % (len(basa))
     try:
-        x = basa[number_fruit_in_order]['name']
+        x = basa[context.user_data['number_fruit_in_order']]['name']
     except Exception:
-        number_fruit_in_order = 0
-        x = basa[number_fruit_in_order]['name']
+        context.user_data['number_fruit_in_order'] = 0
+        x = basa[context.user_data['number_fruit_in_order']]['name']
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
-    C.execute(f"select f_{number_fruit_in_order} from orders where token={id_user}")
+    C.execute(f"select f_{context.user_data['number_fruit_in_order']} from orders where token={id_user}")
     znach = int(C.fetchall()[0][0])
     print(znach)
-    C.execute(f"""Update orders set f_{number_fruit_in_order} = {znach + 1} where token = {id_user}""")
+    C.execute(f"""Update orders set f_{context.user_data['number_fruit_in_order']} = {znach + 1} where token = {id_user}""")
     BASE.commit()
     await update.message.reply_text(x)
-    await update.message.reply_text(basa[number_fruit_in_order]['line'])
-    await update.message.reply_text(basa[number_fruit_in_order]['image'], reply_markup=frut_random_keyboard)
+    await update.message.reply_text(basa[context.user_data['number_fruit_in_order']]['line'])
+    await update.message.reply_text(basa[context.user_data['number_fruit_in_order']]['image'], reply_markup=frut_random_keyboard)
     global latest_mode
     latest_mode = frut_random_keyboard
 async def previous(update, context):
-    global number_fruit_in_order
-    number_fruit_in_order = (number_fruit_in_order - 1) % (len(basa))
+    context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] - 1) % (len(basa))
     try:
-        x = basa[number_fruit_in_order]['name']
+        x = basa[context.user_data['number_fruit_in_order']]['name']
     except Exception:
-        number_fruit_in_order = 0
-        x = basa[number_fruit_in_order]['name']
+        context.user_data['number_fruit_in_order'] = 0
+        x = basa[context.user_data['number_fruit_in_order']]['name']
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
-    C.execute(f"select f_{number_fruit_in_order} from orders where token={id_user}")
+    C.execute(f"select f_{context.user_data['number_fruit_in_order']} from orders where token={id_user}")
     znach = int(C.fetchall()[0][0])
     print(znach)
-    C.execute(f"""Update orders set f_{number_fruit_in_order} = {znach + 1} where token = {id_user}""")
+    C.execute(f"""Update orders set f_{context.user_data['number_fruit_in_order']} = {znach + 1} where token = {id_user}""")
     BASE.commit()
     await update.message.reply_text(x)
-    await update.message.reply_text(basa[number_fruit_in_order]['line'])
-    await update.message.reply_text(basa[number_fruit_in_order]['image'], reply_markup=frut_random_keyboard)
+    await update.message.reply_text(basa[context.user_data['number_fruit_in_order']]['line'])
+    await update.message.reply_text(basa[context.user_data['number_fruit_in_order']]['image'], reply_markup=frut_random_keyboard)
     global latest_mode
     latest_mode = frut_random_keyboard
 async def fruit_line_in_order(update, context):
-    global number_fruit_in_order
     try:
-        x = basa[number_fruit_in_order]['name']
+        x = basa[context.user_data['number_fruit_in_order']]['name']
     except Exception:
-        number_fruit_in_order = 0
-        x = basa[number_fruit_in_order]['name']
+        context.user_data['number_fruit_in_order'] = 0
+        x = basa[context.user_data['number_fruit_in_order']]['name']
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
-    C.execute(f"select f_{number_fruit_in_order} from orders where token={id_user}")
+    C.execute(f"select f_{context.user_data['number_fruit_in_order']} from orders where token={id_user}")
     znach = int(C.fetchall()[0][0])
-    print(znach)
-    C.execute(f"""Update orders set f_{number_fruit_in_order} = {znach + 1} where token = {id_user}""")
+    C.execute(f"""Update orders set f_{context.user_data['number_fruit_in_order']} = {znach + 1} where token = {id_user}""")
     BASE.commit()
     await update.message.reply_text(x)
-    await update.message.reply_text(basa[number_fruit_in_order]['line'])
-    await update.message.reply_text(basa[number_fruit_in_order]['image'], reply_markup=frut_random_keyboard)
+    await update.message.reply_text(basa[context.user_data['number_fruit_in_order']]['line'])
+    await update.message.reply_text(basa[context.user_data['number_fruit_in_order']]['image'], reply_markup=frut_random_keyboard)
     global latest_mode
     latest_mode = frut_random_keyboard
 async def fruit_statistics(update, context):
@@ -229,10 +236,6 @@ async def fruit_statistics(update, context):
     global latest_mode
     latest_mode = frut_buttons
 
-
-'''async def fruit(update, context):
-    await update.message.reply_text('same text', reply_markup=markup)'''
-
 async def parsing(update, context):
     await update.message.reply_text('''Пока закрыто...
 
@@ -242,31 +245,60 @@ async def parsing(update, context):
 
 
 async def quiz(update, context):
-    await update.message.reply_text('''Пока закрыто...
+    id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
+    C.execute(f"select * from quiz_table where token={id_user}")
+    if C.fetchall() == []:
+        cursor = BASE.execute('select * from quiz_table')
+        names = list(map(lambda x: x[0], cursor.description))
+        C.execute(f"""INSERT INTO quiz_table({', '.join(names)})
+                   VALUES('{id_user}', 'name', 0, 0);""")
+        BASE.commit()
+        await update.message.reply_text('''
+О, замечательно, хотите поиграть в викторину по моему любимому сериалу? Ну смотрите, каждый следующий вопрос будет всё сложнее!
+Есть три уровня сложности:
+Первый - даже не смотрящий сериала ответит на большинство вопросов;
+Второй - только для фанатов, которые смотрели этот шедевр;
+Третий - для тех кто живёт в мире One Piece, или просто у кого отличная память!
 
-Выберите то, что работает.''', reply_markup=main_buttons)
+Только вот одна загвостка, я не знаю как к вам обращаться!
+
+ВВЕДИТЕ ваше ИМЯ, которое будет отображаться у других пользователей.
+Если вы ошибётесь, то ничего страшного, его можно будет поменять!
+        ''')
+        context.user_data['quiz_name'] = 1
+        return
+    global start_keyboard
+    C.execute(f"select name from quiz_table where token={id_user}")
+    user_name = C.fetchall()[0][0]
+    await update.message.reply_text(f'''
+О, замечательно, хотите ещё раз сыграть в викторину по моему любимому сериалу? Ну как вы помните, каждый следующий вопрос будет всё сложнее!
+
+Если вам надоело имя "{user_name}", то нажмите rename, только помните, у остальных пользователей оно тоже меняется!
+
+Если вы уже готовы начать, то нажмите Начать!
+''', reply_markup=start_keyboard)
     global latest_mode
-    latest_mode = main_buttons
+    latest_mode = start_keyboard
 
 
+async def rename(update, context):
+    context.user_data['quiz_name'] = 1
+    await update.message.reply_text('Хорошо, переназавите себя так, будто пишите имя на листовке с наградами за йонко, где ваша фотография и награда 5 000 000 000 Белли!')
 
-conv_handler = ConversationHandler(
-    [CommandHandler('start', help)],
-    fallbacks=[CommandHandler('stop', help)],
-    states={
-        # Функция читает ответ на первый вопрос и задаёт второй.
-        'fruits_mod': [MessageHandler(filters.TEXT & ~filters.COMMAND, fruit)],
-        'main': [MessageHandler(filters.TEXT & ~filters.COMMAND, help)],
-        'fruit_line_in_order': [MessageHandler(filters.TEXT & ~filters.COMMAND, fruit_line_in_order)],
-        # Функция читает ответ на второй вопрос и завершает диалог.
-        'parsing_mod': [MessageHandler(filters.TEXT & ~filters.COMMAND, parsing)]
-    },
-    # Точка прерывания диалога. В данном случае — команда /stop.
-    #fallbacks=[CommandHandler('stop', stop)]
-)
-#application.add_handler(conv_handler)
+async def start_quiz(update, context):
+    if 'quiz_active' not in context.user_data:
+        context.user_data['quiz_active'] = 0
+    else:
+        context.user_data['quiz_active'] += 1
+    num = context.user_data['quiz_active']
+    keyboard = ReplyKeyboardMarkup([['/start_quiz']], one_time_keyboard=True)
+    await update.message.reply_text(basa_quiz[num]['question'], reply_markup=keyboard)
+    global latest_mode
+    latest_mode = keyboard
+
 
 def main():
+    # application.add_handler(conv_handler)
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("help", help))
     application.add_handler(CommandHandler("quiz", quiz))
@@ -278,6 +310,8 @@ def main():
     application.add_handler(CommandHandler("previous", previous))
     application.add_handler(CommandHandler("next_fruit", next_fruit))
     application.add_handler(CommandHandler("random_fruit", random_fruit))
+    application.add_handler(CommandHandler("start_quiz", start_quiz))
+    application.add_handler(CommandHandler("rename", rename))
     text_handler = MessageHandler(filters.TEXT, users_text)
     application.add_handler(text_handler)
     application.run_polling()
