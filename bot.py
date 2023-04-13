@@ -91,6 +91,60 @@ async def users_text(update, context):
         latest_mode = start_keyboard
         context.user_data.clear()
         return
+    #Это Режим викторины
+    if 'quiz_active' in context.user_data:
+        # Получаем номер вопроса
+        num = context.user_data['quiz_active']
+        # Проверяем совподение с верным
+        if update.message.text == quiz_db[num]['answer']:
+            # Сообщаем, что всё верно и начисляем баллы
+            context.user_data['score'] += quiz_db[num]['exp']
+            print(context.user_data['score'])
+
+            await update.message.reply_text(choice(['Да, верно!', 'Обсалютно верно!',
+                                                    'За этот ответ вы заслуживаете баллы!',
+                                                    'Как вам это удаётся?! Начисляю баллы!']))
+        else:
+            # Сообщаем верный ответ
+            await update.message.reply_text(quiz_db[num]['link'])
+
+        # Далее выводим новый вопрос с ответоми на клавиатуре и увеличиваем номер вопроса
+        context.user_data['quiz_active'] += 1
+        num += 1
+        if num  == 31:
+            print('all')
+            id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
+
+            C.execute(f'select record from quiz_table where token={id_user}')
+
+            last_record = int(C.fetchall()[0][0])
+
+            if context.user_data['score'] > last_record:
+                C.execute(f'''Update quiz_table set record = '{context.user_data['score']}' where token = {id_user}''')
+                BASE.commit()
+                await update.message.reply_text(f'Поздравляю, это ваш новый рекорд!\n'
+                                                f'В прошлый раз вы набрали {last_record},'
+                                                f"а в этот целых {context.user_data['score']}!!!\n"
+                                                f"Сейчас лучшие игроки:\n"
+                                                f'1-й: Вы!\n(Я просто ещё не умею показывать всех игроков)')
+                return
+            await update.message.reply_text('Результаты не плохие, но это не новый рекорд!\n'
+                                            f'В прошлый раз вы набрали {last_record},'
+                                            f"а в этот целых {context.user_data['score']}!!!\n"
+                                            "Сейчас лучшие игроки:\n"
+                                            '1-й: Вы!\n(Я просто ещё не умею показывать всех игроков)')
+            context.user_data.clear()
+
+        answers = quiz_db[num]['incorrect'].split()
+        answers.append(quiz_db[num]['answer'])
+        shuffle(answers)
+        print(answers)
+        keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
+
+        await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
+
+        latest_mode = keyboard
+        return
 
     await update.message.reply_text(choice(echo_data), reply_markup=latest_mode)
 
@@ -351,17 +405,18 @@ async def start_quiz(update, context):
 
     if 'quiz_active' not in context.user_data:
         context.user_data['quiz_active'] = 0
+        context.user_data['score'] = 0
     else:
         context.user_data['quiz_active'] += 1
 
     num = context.user_data['quiz_active']
-    answers = quiz_db[num]['incorrect '].split()
+    answers = quiz_db[num]['incorrect'].split()
     answers.append(quiz_db[num]['answer'])
     shuffle(answers)
     print(answers)
     keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
 
-    await update.message.reply_text(quiz_db[num]['question'], reply_markup=keyboard)
+    await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
 
     latest_mode = keyboard
 
