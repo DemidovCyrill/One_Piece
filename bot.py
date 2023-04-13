@@ -1,13 +1,14 @@
 import logging
 import sqlite3
-from random import choice, randint
+from random import choice, randint, shuffle
 
 import requests
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters
 from telegram.ext import CommandHandler
 
-from bot_token import BOT_TOKEN
+#from bot_token import BOT_TOKEN
+BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
 
 
 logging.basicConfig(
@@ -288,10 +289,10 @@ async def fruit_statistics(update, _context):
     latest_mode = fruit_buttons
 
 
-async def parsing(update, _context):
-    await update.message.reply_text('''Пока закрыто...
-
-Выберите то, что работает.''', reply_markup=main_buttons)
+async def parsing(update, context):
+    await update.message.reply_text(''
+        )
+    context.user_data['parsing'] = 1
     global latest_mode
     latest_mode = main_buttons
 
@@ -354,7 +355,11 @@ async def start_quiz(update, context):
         context.user_data['quiz_active'] += 1
 
     num = context.user_data['quiz_active']
-    keyboard = ReplyKeyboardMarkup([['/start_quiz']], one_time_keyboard=True)
+    answers = quiz_db[num]['incorrect '].split()
+    answers.append(quiz_db[num]['answer'])
+    shuffle(answers)
+    print(answers)
+    keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
 
     await update.message.reply_text(quiz_db[num]['question'], reply_markup=keyboard)
 
