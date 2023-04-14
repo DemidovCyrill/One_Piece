@@ -1,8 +1,7 @@
 from bs4 import BeautifulSoup as bs
 import requests
 
-from article import *
-from character import *
+from objects import *
 
 
 class Parser:
@@ -54,7 +53,8 @@ class Parser:
 
         tags = soup.find("div", class_="page-header__categories").get_text().strip()
 
-        if "люди" not in tags.lower():
+        allowed_tags = ["люд", "персонаж", "челове"]
+        if not any(filter(lambda tag: tag in tags.lower(), allowed_tags)):
             return
 
         name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
@@ -84,9 +84,13 @@ class Parser:
         [sup.extract() for sup in age.find_all("sup")]
         age = age.get_text().strip()
 
+        images_src = soup.find("nav", attrs={"data-item-name": "gallery"}).find_all("a", class_="image")
+        images_src = [img.get("href") for img in images_src]
+        images = [requests.get(url).content for url in images_src]
+
         character = Character(name=name, jap_name=jap_name, first_appearance=first_appearance, occupations=occupations,
                               residences=residences, affiliations=affiliations, url=article.url, birth_date=birth_date,
-                              age=age)
+                              age=age, images=images)
         return character
 
     def search_character_by_name(self, request: str):
@@ -98,4 +102,53 @@ class Parser:
                 return character
 
         return articles
-    
+
+    @staticmethod
+    def get_place_info(article: Article):
+        r = requests.get(article.url)
+        soup = bs(r.text, "html.parser")
+
+        tags = soup.find("div", class_="page-header__categories").get_text().strip()
+
+        allowed_tags = ["мест", "город", "остров", "корол"]
+        if not any(filter(lambda tag: tag in tags.lower(), allowed_tags)):
+            return
+
+        disallowed_tags = ["люд", "персонаж", "челове"]
+        if any(filter(lambda tag: tag in tags.lower(), disallowed_tags)):
+            return
+
+        name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
+        jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+
+        first_appearance = soup.find("div", attrs={"data-source": "first"}).find("div")
+        [sup.extract() for sup in first_appearance.find_all("sup")]
+        first_appearance = first_appearance.get_text().strip()
+
+        region = soup.find("div", attrs={"data-source": "region"}).find("div")
+        [sup.extract() for sup in region.find_all("sup")]
+        region = region.get_text().strip()
+
+        images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
+        if images_src:
+            images_src = images_src.find_all("a", class_="image")
+            images_src = [img.get("href") for img in images_src]
+        else:
+            images_src = soup.find("a", class_="image")
+            images_src = [images_src.get("href")]
+
+        images = [requests.get(url).content for url in images_src]
+
+        place = Place(name=name, jap_name=jap_name, first_appearance=first_appearance, region=region, images=images)
+
+        return place
+
+    def search_place_by_name(self, request: str):
+        articles = self.search_article_by_name(request)
+        for article in articles:
+            place = self.get_place_info(article)
+
+            if place:
+                return place
+
+        return articles
