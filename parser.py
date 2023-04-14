@@ -11,7 +11,7 @@ class Parser:
 
         self.url = self.url.replace("%lang", self.lang)
 
-    def search_article_by_name(self, request: str, max_results: int = 5):
+    def search_articles(self, request: str, max_results: int = 5):
         url = self.url
         url = url.replace("%req", request)
 
@@ -84,8 +84,14 @@ class Parser:
         [sup.extract() for sup in age.find_all("sup")]
         age = age.get_text().strip()
 
-        images_src = soup.find("nav", attrs={"data-item-name": "gallery"}).find_all("a", class_="image")
-        images_src = [img.get("href") for img in images_src]
+        images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
+        if images_src:
+            images_src = images_src.find_all("a", class_="image")
+            images_src = [img.get("href") for img in images_src]
+        else:
+            images_src = soup.find("a", class_="image")
+            images_src = [images_src.get("href")]
+
         images = [requests.get(url).content for url in images_src]
 
         character = Character(name=name, jap_name=jap_name, first_appearance=first_appearance, occupations=occupations,
@@ -94,7 +100,7 @@ class Parser:
         return character
 
     def search_character_by_name(self, request: str):
-        articles = self.search_article_by_name(request)
+        articles = self.search_articles(request)
         for article in articles:
             character = self.get_character_info(article)
 
@@ -144,7 +150,7 @@ class Parser:
         return place
 
     def search_place_by_name(self, request: str):
-        articles = self.search_article_by_name(request)
+        articles = self.search_articles(request)
         for article in articles:
             place = self.get_place_info(article)
 
@@ -152,3 +158,44 @@ class Parser:
                 return place
 
         return articles
+
+    @staticmethod
+    def get_object_info(article: Article):
+        r = requests.get(article.url)
+        soup = bs(r.text, "html.parser")
+
+        # name = soup.find("h1", attrs={"id": "firstHeading"}).get_text().strip()
+        name = soup.find("h2", attrs={"data-source": "name"})
+
+        if not name:
+            name = soup.find("h2", attrs={"data-source": "title"})
+
+        name = name.get_text().strip()
+        jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+
+        images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
+        if images_src:
+            images_src = images_src.find_all("a", class_="image")
+            images_src = [img.get("href") for img in images_src]
+        else:
+            images_src = soup.find("a", class_="image")
+            images_src = [images_src.get("href")]
+
+        images = [requests.get(url).content for url in images_src]
+
+        object_ = SimpleObject(name=name, jap_name=jap_name, images=images)
+
+        return object_
+
+    def search_object(self, request: str):
+        article = self.search_articles(request, max_results=1)[0]
+
+        character = self.get_character_info(article)
+        if character:
+            return character
+
+        place = self.get_place_info(article)
+        if place:
+            return place
+
+        return self.get_object_info(article)
