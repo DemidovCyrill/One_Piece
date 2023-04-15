@@ -152,15 +152,15 @@ async def users_text(update, context):
                 await update.message.reply_text(f'Поздравляю, это ваш новый рекорд!\n'
                                                 f'В прошлый раз вы набрали {last_record},'
                                                 f"а в этот целых {context.user_data['score']}!!!\n"
-                                                f"Сейчас лучшие игроки:\n"
-                                                f'1-й: Вы!\n(Я просто ещё не умею показывать всех игроков)', reply_markup=main_buttons)
+                                                , reply_markup=main_buttons)
+                await quiz_statistic(update, context)
                 context.user_data['latest_mode'] = main_buttons
                 return
             await update.message.reply_text('Результаты не плохие, но это не новый рекорд!\n'
                                             f'В прошлый раз вы набрали {last_record},'
                                             f"а в этот целых {context.user_data['score']}!!!\n"
-                                            "Сейчас лучшие игроки:\n"
-                                            '1-й: Вы!\n(Я просто ещё не умею показывать всех игроков)', reply_markup=main_buttons)
+                                            , reply_markup=main_buttons)
+            await quiz_statistic(update, context)
             context.user_data.clear()
             context.user_data['latest_mode'] = main_buttons
 
