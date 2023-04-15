@@ -15,16 +15,16 @@ BASE = sqlite3.connect('clients.db')
 C = BASE.cursor()
 
 ''' далее описываются статические клавиатуры '''
-reply_keyboard = [['/fruit'], ['/parsing'], ['/quiz']]
+reply_keyboard = [['Фрукты'], ['Поиск'], ['Викторина']]
 main_buttons = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
-fruit_keyboard = [['/random_fruit'], ['/fruit_line_in_order'], ['/fruit_statistics'], ['/help']]
+fruit_keyboard = [['Случайный фрукт'], ['Фрукты по порядку'], ['Статистика'], ['Назад']]
 fruit_buttons = ReplyKeyboardMarkup(fruit_keyboard, one_time_keyboard=True)
 
-fruit_random_keyboard = [['/previous', '/help', '/next_fruit']]
+fruit_random_keyboard = [['←', 'Назад', '→']]
 fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyboard=True)
 
-start_keyboard = [['/start_quiz'], ['/rename']]
+start_keyboard = [['Начать'], ['Поменять имя'], ['Результаты']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 
@@ -84,71 +84,12 @@ async def random_fruit(update, context):
     print(value)
     C.execute(f'''Update orders set f_{range_} = {value + 1} where token = {id_user}''')
     BASE.commit()
-
-    await update.message.reply_text(fruits_db[range_]['name'])
-    await update.message.reply_text(fruits_db[range_]['line'])
-    await update.message.reply_text(fruits_db[range_]['image'], reply_markup=fruit_buttons)
+    open("./tmp.png", "wb").write(requests.get(fruits_db[range_]['image']).content)
+    await update.message.reply_photo(photo="./tmp.png", caption=fruits_db[range_]['name'], reply_markup=main_buttons)
+    await update.message.reply_text(fruits_db[range_]['line'], reply_markup=fruit_buttons)
 
     context.user_data['latest_mode'] = fruit_buttons
 
-
-async def next_fruit(update, context):
-
-    context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] + 1) % (len(fruits_db))
-
-    try:
-        x = fruits_db[context.user_data['number_fruit_in_order']]['name']
-    except Exception as e:
-        print(e)
-
-        context.user_data['number_fruit_in_order'] = 0
-        x = fruits_db[context.user_data['number_fruit_in_order']]['name']
-
-    id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
-    C.execute(f'''select f_{context.user_data['number_fruit_in_order']} from orders where token={id_user}''')
-
-    value = int(C.fetchall()[0][0])
-    print(value)
-
-    C.execute(
-        f'''Update orders set f_{context.user_data['number_fruit_in_order']} = {value + 1} where token = {id_user}''')
-    BASE.commit()
-
-    await update.message.reply_text(x)
-    await update.message.reply_text(fruits_db[context.user_data['number_fruit_in_order']]['line'])
-    await update.message.reply_text(fruits_db[context.user_data['number_fruit_in_order']]['image'],
-                                    reply_markup=fruit_random_keyboard)
-
-    context.user_data['latest_mode'] = fruit_random_keyboard
-
-
-async def previous(update, context):
-    context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] - 1) % (len(fruits_db))
-    try:
-        x = fruits_db[context.user_data['number_fruit_in_order']]['name']
-    except Exception as e:
-        print(e)
-
-        context.user_data['number_fruit_in_order'] = 0
-        x = fruits_db[context.user_data['number_fruit_in_order']]['name']
-
-    id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
-    C.execute(f'''select f_{context.user_data['number_fruit_in_order']} from orders where token={id_user}''')
-
-    value = int(C.fetchall()[0][0])
-    print(value)
-
-    C.execute(
-        f'''Update orders set f_{context.user_data['number_fruit_in_order']} = {value + 1} where token = {id_user}''')
-
-    BASE.commit()
-
-    await update.message.reply_text(x)
-    await update.message.reply_text(fruits_db[context.user_data['number_fruit_in_order']]['line'])
-    await update.message.reply_text(fruits_db[context.user_data['number_fruit_in_order']]['image'],
-                                    reply_markup=fruit_random_keyboard)
-
-    context.user_data['latest_mode'] = fruit_random_keyboard
 
 
 async def fruit_line_in_order(update, context):
@@ -169,13 +110,22 @@ async def fruit_line_in_order(update, context):
 
     BASE.commit()
 
-    await update.message.reply_text(x)
-    await update.message.reply_text(fruits_db[context.user_data['number_fruit_in_order']]['line'])
-    await update.message.reply_text(fruits_db[context.user_data['number_fruit_in_order']]['image'],
-                                    reply_markup=fruit_random_keyboard)
+    range_ = context.user_data['number_fruit_in_order']
+    open("./tmp.png", "wb").write(requests.get(fruits_db[range_]['image']).content)
+    await update.message.reply_photo(photo="./tmp.png", caption=fruits_db[range_]['name'])
+    await update.message.reply_text(fruits_db[range_]['line'], reply_markup=fruit_random_keyboard)
 
     context.user_data['latest_mode'] = fruit_random_keyboard
 
+
+async def next_fruit(update, context):
+    context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] + 1) % len(fruits_db)
+    await fruit_line_in_order(update, context)
+
+
+async def previous(update, context):
+    context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] - 1) % len(fruits_db)
+    await fruit_line_in_order(update, context)
 
 async def fruit_statistics(update, context):
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])

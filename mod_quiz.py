@@ -15,16 +15,7 @@ BASE = sqlite3.connect('clients.db')
 C = BASE.cursor()
 
 ''' далее описываются статические клавиатуры '''
-reply_keyboard = [['/fruit'], ['/parsing'], ['/quiz']]
-main_buttons = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-
-fruit_keyboard = [['/random_fruit'], ['/fruit_line_in_order'], ['/fruit_statistics'], ['/help']]
-fruit_buttons = ReplyKeyboardMarkup(fruit_keyboard, one_time_keyboard=True)
-
-fruit_random_keyboard = [['/previous', '/help', '/next_fruit']]
-fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyboard=True)
-
-start_keyboard = [['/start_quiz'], ['/rename'], ['/quiz_statistic'], ['/help']]
+start_keyboard = [['Начать!'], ['Переименоваться'], ['Статистика'], ['Назад']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 
@@ -34,7 +25,7 @@ start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 
 async def quiz(update, context):
-
+    context.user_data['quiz'] = 0
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
     C.execute(f'select * from quiz_table where token={id_user}')
 

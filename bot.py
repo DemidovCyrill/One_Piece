@@ -34,16 +34,16 @@ quiz_db = requests.get(
     .json()
 
 ''' далее описываются статические клавиатуры '''
-reply_keyboard = [['/fruit'], ['/parsing'], ['/quiz']]
+reply_keyboard = [['Фрукты'], ['Поиск'], ['Викторина']]
 main_buttons = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
-fruit_keyboard = [['/random_fruit'], ['/fruit_line_in_order'], ['/fruit_statistics'], ['/help']]
+fruit_keyboard = [['Случайный фрукт'], ['Фрукты по порядку'], ['Статистика'], ['Назад']]
 fruit_buttons = ReplyKeyboardMarkup(fruit_keyboard, one_time_keyboard=True)
 
-fruit_random_keyboard = [['/previous', '/help', '/next_fruit']]
+fruit_random_keyboard = [['←', 'Назад', '→']]
 fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyboard=True)
 
-start_keyboard = [['/start_quiz'], ['/rename'], ['/quiz_statistic'], ['/help']]
+start_keyboard = [['Начать!'], ['Переименоваться'], ['Статистика'], ['Назад']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 
@@ -86,8 +86,29 @@ async def users_text(update, context):
 
     if context.user_data == {}:
         context.user_data['latest_mode'] = main_buttons
-
+    if update.message.text == 'Фрукты':
+        await fruit(update, context)
+        return
+    if update.message.text == 'Поиск':
+        await parsing(update, context)
+        return
+    if update.message.text == 'Викторина':
+        await quiz(update, context)
+        return
     if 'fruit_active' in context.user_data:
+        if update.message.text == 'Случайный фрукт':
+            await random_fruit(update, context)
+            return
+        if update.message.text == 'Фрукты по порядку':
+            context.user_data.clear()
+            await fruit_line_in_order(update, context)
+            return
+        if update.message.text == 'Статистика':
+            await fruit_statistics(update, context)
+            return
+        if update.message.text == 'Назад':
+            await help(update, context)
+            return
         flag, index = check_in_data(update.message.text)
         if flag:
             id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
@@ -99,9 +120,10 @@ async def users_text(update, context):
             C.execute(f'''Update orders set f_{index} = {value + 1} where token = {id_user}''')
             BASE.commit()
 
-            await update.message.reply_text(fruits_db[index]['name'])
-            await update.message.reply_text(fruits_db[index]['line'])
-            await update.message.reply_text(fruits_db[index]['image'], reply_markup=fruit_buttons)
+            open("./tmp.gif", "wb").write(requests.get(fruits_db[index]['image']).content)
+            await update.message.reply_photo(photo="./tmp.gif", caption=fruits_db[index]['name'],
+                                             reply_markup=main_buttons)
+            await update.message.reply_text(fruits_db[index]['line'], reply_markup=fruit_buttons)
 
             context.user_data['latest_mode'] = fruit_buttons
             return
@@ -109,6 +131,18 @@ async def users_text(update, context):
                                         ' из предложенных кнопок!', reply_markup=fruit_buttons)
         context.user_data['latest_mode'] = fruit_buttons
         return
+    if 'number_fruit_in_order' in context.user_data:
+        if update.message.text == '←':
+            await previous(update, context)
+            return
+        if update.message.text == '→':
+            await next_fruit(update, context)
+            return
+        if update.message.text == 'Назад':
+            await fruit(update, context)
+            context.user_data.clear()
+            context.user_data['fruit_active'] = 1
+            return
     if 'quiz_name' in context.user_data:
         id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
         C.execute(f'''Update quiz_table set name = '{update.message.text}' where token = {id_user}''')
@@ -122,6 +156,20 @@ async def users_text(update, context):
         context.user_data['latest_mode'] = start_keyboard
         return
     #Это Режим викторины
+    if 'quiz' in context.user_data:
+        if update.message.text == 'Назад':
+            await quiz(update, context)
+            return
+        if update.message.text == 'Начать!':
+            print('started')
+            await start_quiz(update, context)
+            return
+        if update.message.text == 'Переименоваться':
+            await rename(update, context)
+            return
+        if update.message.text == 'Статистика':
+            await quiz_statistic(update, context)
+            return
     if 'quiz_active' in context.user_data:
         # Получаем номер вопроса
         num = context.user_data['quiz_active']
@@ -162,6 +210,7 @@ async def users_text(update, context):
                                             , reply_markup=main_buttons)
             await quiz_statistic(update, context)
             context.user_data.clear()
+            context.user_data['quiz'] = 0
             context.user_data['latest_mode'] = main_buttons
 
         answers = quiz_db[num]['incorrect'].split()
