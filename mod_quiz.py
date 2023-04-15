@@ -24,7 +24,7 @@ fruit_buttons = ReplyKeyboardMarkup(fruit_keyboard, one_time_keyboard=True)
 fruit_random_keyboard = [['/previous', '/help', '/next_fruit']]
 fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyboard=True)
 
-start_keyboard = [['/start_quiz'], ['/rename']]
+start_keyboard = [['/start_quiz'], ['/rename'], ['/quiz_statistic'], ['/help']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 
@@ -79,6 +79,19 @@ async def rename(update, context):
         'Хорошо, переназавите себя так, будто пишите имя на листовке с наградами за йонко, '
         'где ваша фотография и награда 5 000 000 000 Белли!')
 
+
+async def quiz_statistic(update, context):
+    cursor = BASE.execute('select * from quiz_table')
+    mas = []
+    for i in cursor:
+        mas.append(i)
+        #await update.message.reply_text(f'{i}')
+    mas = sorted(mas, key=lambda x: x[2] * (-1))
+    text_statistic = 'Топ 3 лучших игроков:'
+    for i in range(3):
+        text_statistic += f'\n{i + 1}-е место: {mas[i][1]} - {mas[i][2]} балл!'
+    await update.message.reply_text(text_statistic, reply_markup=start_keyboard)
+    context.user_data['latest_mode'] = start_keyboard
 
 async def start_quiz(update, context):
     if 'quiz_active' not in context.user_data:

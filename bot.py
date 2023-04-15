@@ -2,6 +2,8 @@ import logging
 import sqlite3
 from random import choice, shuffle
 
+from parser import Parser
+
 import requests
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters
@@ -10,9 +12,9 @@ from telegram.ext import CommandHandler
 from mod_fruit import fruit, fruit_statistics, fruit_line_in_order
 from mod_fruit import previous, next_fruit, random_fruit, check_in_data
 
-from mod_quiz import quiz, rename, start_quiz
+from mod_quiz import quiz, rename, start_quiz, quiz_statistic
 
-from mod_parsing import parsing
+from mod_parsing import parsing, parsing_character
 
 #from bot_token import BOT_TOKEN
 BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
@@ -41,7 +43,7 @@ fruit_buttons = ReplyKeyboardMarkup(fruit_keyboard, one_time_keyboard=True)
 fruit_random_keyboard = [['/previous', '/help', '/next_fruit']]
 fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyboard=True)
 
-start_keyboard = [['/start_quiz'], ['/rename']]
+start_keyboard = [['/start_quiz'], ['/rename'], ['/quiz_statistic'], ['/help']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
 
@@ -171,6 +173,19 @@ async def users_text(update, context):
 
         context.user_data['latest_mode'] = main_buttons
         return
+    if 'parsing_character' in context.user_data:
+        await update.message.reply_text('Подождите секундочку...')
+        q = Parser().search_character_by_name(request=update.message.text)
+        await update.message.reply_text(f'Имя: {q.name}\n\n'
+                                        f'Возраст: {q.age}\n\n'
+                                        f'День рождения - {q.birth_date}\n\n'
+                                        f'Должность: {q.occupations }\n\n'
+                                        f'Первое появление: {q.first_appearance}\n\n'
+                                        f'Место проживания: {q.residences}\n\n'
+                                        f'Членские организации: {q.affiliations}\n\n', reply_markup=main_buttons)
+        #await update.message.photo(q.images)
+        await update.message.reply_photo(q.images)
+        return
 
     await update.message.reply_text(choice(echo_data), reply_markup=context.user_data['latest_mode'])
 
@@ -210,6 +225,8 @@ def main():
     application.add_handler(CommandHandler('next_fruit', next_fruit))
     application.add_handler(CommandHandler('random_fruit', random_fruit))
     application.add_handler(CommandHandler('start_quiz', start_quiz))
+    application.add_handler(CommandHandler('parsing_character', parsing_character))
+    application.add_handler(CommandHandler('quiz_statistic', quiz_statistic))
     application.add_handler(CommandHandler('rename', rename))
 
     text_handler = MessageHandler(filters.TEXT, users_text)
