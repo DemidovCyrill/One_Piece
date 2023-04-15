@@ -82,9 +82,8 @@ async def users_text(update, context):
     Она также может быть вызвана в любое время режима, не повлияв на него, ведь
     вконце мы возврещаем набор кнопок latest_mode, который хранит последний вызов клавиатуры """
 
-    global start_keyboard
-    global main_buttons
-
+    if context.user_data == {}:
+        context.user_data['latest_mode'] = main_buttons
 
     if 'fruit_active' in context.user_data:
         flag, index = check_in_data(update.message.text)
