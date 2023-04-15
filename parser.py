@@ -47,7 +47,7 @@ class Parser:
         return articles
 
     @staticmethod
-    def get_character_info(article: Article):
+    def get_character_info(article: Article, max_images=1):
         r = requests.get(article.url)
         soup = bs(r.text, "html.parser")
 
@@ -55,6 +55,10 @@ class Parser:
 
         allowed_tags = ["люд", "персонаж", "челове"]
         if not any(filter(lambda tag: tag in tags.lower(), allowed_tags)):
+            return
+
+        disallowed_tags = []
+        if any(filter(lambda tag: tag in tags.lower(), disallowed_tags)):
             return
 
         name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
@@ -92,17 +96,18 @@ class Parser:
             images_src = soup.find("a", class_="image")
             images_src = [images_src.get("href")]
 
-        images = [requests.get(url).content for url in images_src]
+        images = [requests.get(url).content for url in images_src[:max_images]]
 
         character = Character(name=name, jap_name=jap_name, first_appearance=first_appearance, occupations=occupations,
                               residences=residences, affiliations=affiliations, url=article.url, birth_date=birth_date,
                               age=age, images=images)
         return character
 
-    def search_character_by_name(self, request: str):
+    def search_character_by_name(self, request: str, max_images=1):
         articles = self.search_articles(request)
+        print(articles)
         for article in articles:
-            character = self.get_character_info(article)
+            character = self.get_character_info(article, max_images=max_images)
 
             if character:
                 return character
@@ -110,7 +115,7 @@ class Parser:
         return articles
 
     @staticmethod
-    def get_place_info(article: Article):
+    def get_place_info(article: Article, max_images=1):
         r = requests.get(article.url)
         soup = bs(r.text, "html.parser")
 
@@ -143,16 +148,16 @@ class Parser:
             images_src = soup.find("a", class_="image")
             images_src = [images_src.get("href")]
 
-        images = [requests.get(url).content for url in images_src]
+        images = [requests.get(url).content for url in images_src[:max_images]]
 
         place = Place(name=name, jap_name=jap_name, first_appearance=first_appearance, region=region, images=images)
 
         return place
 
-    def search_place_by_name(self, request: str):
+    def search_place_by_name(self, request: str, max_images=1):
         articles = self.search_articles(request)
         for article in articles:
-            place = self.get_place_info(article)
+            place = self.get_place_info(article, max_images=max_images)
 
             if place:
                 return place

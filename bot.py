@@ -176,15 +176,29 @@ async def users_text(update, context):
     if 'parsing_character' in context.user_data:
         await update.message.reply_text('Подождите секундочку...')
         q = Parser().search_character_by_name(request=update.message.text)
-        await update.message.reply_text(f'Имя: {q.name}\n\n'
-                                        f'Возраст: {q.age}\n\n'
-                                        f'День рождения - {q.birth_date}\n\n'
-                                        f'Должность: {q.occupations }\n\n'
-                                        f'Первое появление: {q.first_appearance}\n\n'
-                                        f'Место проживания: {q.residences}\n\n'
-                                        f'Членские организации: {q.affiliations}\n\n', reply_markup=main_buttons)
+        text = f'Имя: {q.name}\n\n'\
+               f'Возраст: {q.age}\n\n'\
+               f'День рождения - {q.birth_date}\n\n'\
+               f'Должность: {q.occupations }\n\n'\
+               f'Первое появление: {q.first_appearance}\n\n'\
+               f'Место проживания: {q.residences}\n\n'\
+               f'Членские организации: {q.affiliations}\n\n'
+        # await update.message.reply_text(f'Имя: {q.name}\n\n'
+        #                                 f'Возраст: {q.age}\n\n'
+        #                                 f'День рождения - {q.birth_date}\n\n'
+        #                                 f'Должность: {q.occupations }\n\n'
+        #                                 f'Первое появление: {q.first_appearance}\n\n'
+        #                                 f'Место проживания: {q.residences}\n\n'
+        #                                 f'Членские организации: {q.affiliations}\n\n', reply_markup=main_buttons)
         #await update.message.photo(q.images)
-        await update.message.reply_photo(q.images)
+        #for image in q.images:
+        #    open("./tmp.jpg", "wb").write(image)
+        #    await update.message.reply_photo(photo="./tmp.jpg")
+        try:
+            open("./tmp.jpg", "wb").write(q.images[0])
+            await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=main_buttons)
+        except IndexError:
+            await update.message.reply_text(text, reply_markup=main_buttons)
         return
 
     await update.message.reply_text(choice(echo_data), reply_markup=context.user_data['latest_mode'])
