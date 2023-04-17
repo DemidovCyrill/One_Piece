@@ -2,7 +2,6 @@ import logging
 import sqlite3
 from random import choice, shuffle
 
-from parser import Parser
 
 import requests
 from telegram import ReplyKeyboardMarkup
@@ -12,9 +11,9 @@ from telegram.ext import CommandHandler
 from mod_fruit import fruit, fruit_statistics, fruit_line_in_order
 from mod_fruit import previous, next_fruit, random_fruit, check_in_data
 
-from mod_quiz import quiz, rename, start_quiz, quiz_statistic
+from mod_quiz import quiz, rename, start_quiz, quiz_statistic, quiz_questions
 
-from mod_parsing import parsing, parsing_character
+from mod_parsing import parsing, parsing_character, parsing_character_request
 
 #from bot_token import BOT_TOKEN
 BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
@@ -154,11 +153,12 @@ async def users_text(update, context):
 
         context.user_data.clear()
         context.user_data['latest_mode'] = start_keyboard
+        context.user_data['quiz'] = 0
         return
     #Это Режим викторины
     if 'quiz' in context.user_data:
         if update.message.text == 'Назад':
-            await quiz(update, context)
+            await help(update, context)
             return
         if update.message.text == 'Начать!':
             print('started')
@@ -171,83 +171,10 @@ async def users_text(update, context):
             await quiz_statistic(update, context)
             return
     if 'quiz_active' in context.user_data:
-        # Получаем номер вопроса
-        num = context.user_data['quiz_active']
-        # Проверяем совподение с верным
-        if update.message.text == quiz_db[num]['answer']:
-            # Сообщаем, что всё верно и начисляем баллы
-            context.user_data['score'] += quiz_db[num]['exp']
-            await update.message.reply_text(choice(['Да, верно!', 'Обсалютно верно!',
-                                                    'За этот ответ вы заслуживаете баллы!',
-                                                    'Как вам это удаётся?! Начисляю баллы!']))
-        else:
-            # Сообщаем верный ответ
-            await update.message.reply_text(quiz_db[num]['link'])
-
-        # Далее выводим новый вопрос с ответоми на клавиатуре и увеличиваем номер вопроса
-        context.user_data['quiz_active'] += 1
-        num += 1
-        if num == 31:
-            id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
-
-            C.execute(f'select record from quiz_table where token={id_user}')
-
-            last_record = int(C.fetchall()[0][0])
-
-            if context.user_data['score'] >= last_record:
-                C.execute(f'''Update quiz_table set record = '{context.user_data['score']}' where token = {id_user}''')
-                BASE.commit()
-                await update.message.reply_text(f'Поздравляю, это ваш новый рекорд!\n'
-                                                f'В прошлый раз вы набрали {last_record},'
-                                                f"а в этот целых {context.user_data['score']}!!!\n"
-                                                , reply_markup=main_buttons)
-                await quiz_statistic(update, context)
-                context.user_data['latest_mode'] = main_buttons
-                return
-            await update.message.reply_text('Результаты не плохие, но это не новый рекорд!\n'
-                                            f'В прошлый раз вы набрали {last_record},'
-                                            f"а в этот целых {context.user_data['score']}!!!\n"
-                                            , reply_markup=main_buttons)
-            await quiz_statistic(update, context)
-            context.user_data.clear()
-            context.user_data['quiz'] = 0
-            context.user_data['latest_mode'] = main_buttons
-
-        answers = quiz_db[num]['incorrect'].split()
-        answers.append(quiz_db[num]['answer'])
-        shuffle(answers)
-        keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
-
-        await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
-
-        context.user_data['latest_mode'] = main_buttons
+        await quiz_questions(update, context)
         return
     if 'parsing_character' in context.user_data:
-        await update.message.reply_text('Подождите секундочку...')
-        q = Parser().search_character_by_name(request=update.message.text)
-        text = f'Имя: {q.name}\n\n'\
-               f'Возраст: {q.age}\n\n'\
-               f'День рождения - {q.birth_date}\n\n'\
-               f'Должность: {q.occupations }\n\n'\
-               f'Первое появление: {q.first_appearance}\n\n'\
-               f'Место проживания: {q.residences}\n\n'\
-               f'Членские организации: {q.affiliations}\n\n'
-        # await update.message.reply_text(f'Имя: {q.name}\n\n'
-        #                                 f'Возраст: {q.age}\n\n'
-        #                                 f'День рождения - {q.birth_date}\n\n'
-        #                                 f'Должность: {q.occupations }\n\n'
-        #                                 f'Первое появление: {q.first_appearance}\n\n'
-        #                                 f'Место проживания: {q.residences}\n\n'
-        #                                 f'Членские организации: {q.affiliations}\n\n', reply_markup=main_buttons)
-        #await update.message.photo(q.images)
-        #for image in q.images:
-        #    open("./tmp.jpg", "wb").write(image)
-        #    await update.message.reply_photo(photo="./tmp.jpg")
-        try:
-            open("./tmp.jpg", "wb").write(q.images[0])
-            await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=main_buttons)
-        except IndexError:
-            await update.message.reply_text(text, reply_markup=main_buttons)
+        await parsing_character_request(update, context)
         return
 
     await update.message.reply_text(choice(echo_data), reply_markup=context.user_data['latest_mode'])

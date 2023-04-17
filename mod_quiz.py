@@ -1,4 +1,4 @@
-from random import shuffle
+from random import shuffle, choice
 import sqlite3
 import requests
 from telegram import ReplyKeyboardMarkup
@@ -17,6 +17,10 @@ C = BASE.cursor()
 ''' далее описываются статические клавиатуры '''
 start_keyboard = [['Начать!'], ['Переименоваться'], ['Статистика'], ['Назад']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
+
+reply_keyboard = [['Фрукты'], ['Поиск'], ['Викторина']]
+main_buttons = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+
 
 
 ''' В этой переменной хранится значения последней вызываемой клавиатуры у пользователя
@@ -100,3 +104,55 @@ async def start_quiz(update, context):
     await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
 
     context.user_data['latest_mode'] = keyboard
+
+async def quiz_questions(update, context):
+    # Получаем номер вопроса
+    num = context.user_data['quiz_active']
+    # Проверяем совподение с верным
+    if update.message.text == quiz_db[num]['answer']:
+        # Сообщаем, что всё верно и начисляем баллы
+        context.user_data['score'] += quiz_db[num]['exp']
+        await update.message.reply_text(choice(['Да, верно!', 'Обсалютно верно!',
+                                                'За этот ответ вы заслуживаете баллы!',
+                                                'Как вам это удаётся?! Начисляю баллы!']))
+    else:
+        # Сообщаем верный ответ
+        await update.message.reply_text(quiz_db[num]['link'])
+
+    # Далее выводим новый вопрос с ответоми на клавиатуре и увеличиваем номер вопроса
+    context.user_data['quiz_active'] += 1
+    num += 1
+    if num == 32:
+        id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
+
+        C.execute(f'select record from quiz_table where token={id_user}')
+
+        last_record = int(C.fetchall()[0][0])
+
+        if context.user_data['score'] >= last_record:
+            C.execute(f'''Update quiz_table set record = '{context.user_data['score']}' where token = {id_user}''')
+            BASE.commit()
+            await update.message.reply_text(f'Поздравляю, это ваш новый рекорд!\n'
+                                            f'В прошлый раз вы набрали {last_record},'
+                                            f"а в этот целых {context.user_data['score']}!!!\n"
+                                            , reply_markup=main_buttons)
+            await quiz_statistic(update, context)
+            context.user_data['latest_mode'] = main_buttons
+            return
+        await update.message.reply_text('Результаты не плохие, но это не новый рекорд!\n'
+                                        f'В прошлый раз вы набрали {last_record},'
+                                        f"а в этот целых {context.user_data['score']}!!!\n"
+                                        , reply_markup=main_buttons)
+        await quiz_statistic(update, context)
+        context.user_data.clear()
+        context.user_data['quiz'] = 0
+        context.user_data['latest_mode'] = main_buttons
+
+    answers = quiz_db[num]['incorrect'].split()
+    answers.append(quiz_db[num]['answer'])
+    shuffle(answers)
+    keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
+
+    await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
+
+    context.user_data['latest_mode'] = main_buttons
