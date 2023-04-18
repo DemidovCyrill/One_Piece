@@ -13,7 +13,7 @@ from mod_fruit import previous, next_fruit, random_fruit, check_in_data
 
 from mod_quiz import quiz, rename, start_quiz, quiz_statistic, quiz_questions
 
-from mod_parsing import parsing, parsing_character, parsing_character_request
+from mod_parsing import parsing, parsing_character, parsing_character_request, keyboard_of_random_buttons
 
 #from bot_token import BOT_TOKEN
 BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
@@ -90,6 +90,7 @@ async def users_text(update, context):
         return
     if update.message.text == 'Поиск':
         await parsing(update, context)
+        context.user_data['parsing_active'] = 1
         return
     if update.message.text == 'Викторина':
         await quiz(update, context)
@@ -173,9 +174,26 @@ async def users_text(update, context):
     if 'quiz_active' in context.user_data:
         await quiz_questions(update, context)
         return
-    if 'parsing_character' in context.user_data:
-        await parsing_character_request(update, context)
-        return
+    if 'parsing_active' in context.user_data:
+        if update.message.text == 'Персонаж':
+            await parsing_character(update, context)
+            return
+        if update.message.text == 'Место':
+            await help(update, context)
+            return
+        if update.message.text == 'случайный':
+            await help(update, context)
+            return
+        if update.message.text == 'Другие случайные':
+            await keyboard_of_random_buttons(update, context)
+            return
+        if update.message.text == 'Назад':
+            context.user_data.clear()
+            await help(update, context)
+            return
+        if 'parsing_character' in context.user_data:
+            await parsing_character_request(update, context)
+            return
 
     await update.message.reply_text(choice(echo_data), reply_markup=context.user_data['latest_mode'])
 
