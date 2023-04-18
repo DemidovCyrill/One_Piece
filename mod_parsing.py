@@ -42,7 +42,7 @@ async def parsing_character_request(update, context):
            f'Первое появление: {q.first_appearance}\n\n' \
            f'Место проживания: {q.residences}\n\n' \
            f'Членские организации: {q.affiliations}\n\n'
-    buttons = parsing_buttons()
+    buttons = parsing_buttons(context)
     try:
         open("./tmp.jpg", "wb").write(q.images[0])
         await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
@@ -56,7 +56,7 @@ async def parsing_place_request(update, context):
     text = f'Имя: {q.name}\n\n' \
            f'Первое появление: {q.first_appearance}\n\n' \
            f'Регион: {q.region}\n\n'
-    buttons = parsing_buttons()
+    buttons = parsing_buttons(context)
     try:
         open("./tmp.jpg", "wb").write(q.images[0])
         await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
