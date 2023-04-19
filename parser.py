@@ -3,7 +3,6 @@ import requests
 
 from objects import *
 
-
 class Parser:
     def __init__(self, lang: str = "ru"):
         self.url = 'https://onepiece.fandom.com/%lang/wiki/Служебная:Поиск?query=%req'
@@ -61,42 +60,70 @@ class Parser:
         if any(filter(lambda tag: tag in tags.lower(), disallowed_tags)):
             return
 
-        name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
-        jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+        try:
+            name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
+        except AttributeError:
+            name = "Нет данных"
 
-        first_appearance = soup.find("div", attrs={"data-source": "first"}).find("div")
-        [sup.extract() for sup in first_appearance.find_all("sup")]
-        first_appearance = first_appearance.get_text().strip()
+        try:
+            jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+        except AttributeError:
+            jap_name = "Нет данных"
 
-        occupations = soup.find("div", attrs={"data-source": "occupation"}).find("div")
-        [sup.extract() for sup in occupations.find_all("sup")]
-        occupations = occupations.get_text().strip()
+        try:
+            first_appearance = soup.find("div", attrs={"data-source": "first"}).find("div")
+            [sup.extract() for sup in first_appearance.find_all("sup")]
+            first_appearance = first_appearance.get_text().strip()
+        except AttributeError:
+            first_appearance = "Нет данных"
 
-        residences = soup.find("div", attrs={"data-source": "residence"}).find("div")
-        [sup.extract() for sup in residences.find_all("sup")]
-        residences = residences.get_text().strip()
+        try:
+            occupations = soup.find("div", attrs={"data-source": "occupation"}).find("div")
+            [sup.extract() for sup in occupations.find_all("sup")]
+            occupations = occupations.get_text().strip()
+        except AttributeError:
+            occupations = "Нет данных"
 
-        affiliations = soup.find("div", attrs={"data-source": "affiliation"}).find("div")
-        [sup.extract() for sup in affiliations.find_all("sup")]
-        affiliations = affiliations.get_text().strip()
+        try:
+            residences = soup.find("div", attrs={"data-source": "residence"}).find("div")
+            [sup.extract() for sup in residences.find_all("sup")]
+            residences = residences.get_text().strip()
+        except AttributeError:
+            residences = "Нет данных"
 
-        birth_date = soup.find("div", attrs={"data-source": "birth"}).find("div")
-        [sup.extract() for sup in birth_date.find_all("sup")]
-        birth_date = birth_date.get_text().strip()
+        try:
+            affiliations = soup.find("div", attrs={"data-source": "affiliation"}).find("div")
+            [sup.extract() for sup in affiliations.find_all("sup")]
+            affiliations = affiliations.get_text().strip()
+        except AttributeError:
+            affiliations = "Нет данных"
 
-        age = soup.find("div", attrs={"data-source": "age"}).find("div")
-        [sup.extract() for sup in age.find_all("sup")]
-        age = age.get_text().strip()
+        try:
+            birth_date = soup.find("div", attrs={"data-source": "birth"}).find("div")
+            [sup.extract() for sup in birth_date.find_all("sup")]
+            birth_date = birth_date.get_text().strip()
+        except AttributeError:
+            birth_date = "Нет данных"
 
-        images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
-        if images_src:
-            images_src = images_src.find_all("a", class_="image")
-            images_src = [img.get("href") for img in images_src]
-        else:
-            images_src = soup.find("a", class_="image")
-            images_src = [images_src.get("href")]
+        try:
+            age = soup.find("div", attrs={"data-source": "age"}).find("div")
+            [sup.extract() for sup in age.find_all("sup")]
+            age = age.get_text().strip()
+        except AttributeError:
+            age = "Нет данных"
 
-        images = [requests.get(url).content for url in images_src[:max_images]]
+        try:
+            images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
+            if images_src:
+                images_src = images_src.find_all("a", class_="image")
+                images_src = [img.get("href") for img in images_src]
+            else:
+                images_src = soup.find("a", class_="image")
+                images_src = [images_src.get("href")]
+
+            images = [requests.get(url).content for url in images_src[:max_images]]
+        except AttributeError:
+            images = [""]
 
         character = Character(name=name, jap_name=jap_name, first_appearance=first_appearance, occupations=occupations,
                               residences=residences, affiliations=affiliations, url=article.url, birth_date=birth_date,
@@ -105,7 +132,6 @@ class Parser:
 
     def search_character_by_name(self, request: str, max_images=1):
         articles = self.search_articles(request)
-        print(articles)
         for article in articles:
             character = self.get_character_info(article, max_images=max_images)
 
@@ -129,26 +155,42 @@ class Parser:
         if any(filter(lambda tag: tag in tags.lower(), disallowed_tags)):
             return
 
-        name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
-        jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+        try:
+            name = soup.find("h2", attrs={"data-source": "name"}).get_text().strip()
+        except AttributeError:
+            name = "Нет данных"
 
-        first_appearance = soup.find("div", attrs={"data-source": "first"}).find("div")
-        [sup.extract() for sup in first_appearance.find_all("sup")]
-        first_appearance = first_appearance.get_text().strip()
+        try:
+            jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+        except AttributeError:
+            jap_name = "Нет данных"
 
-        region = soup.find("div", attrs={"data-source": "region"}).find("div")
-        [sup.extract() for sup in region.find_all("sup")]
-        region = region.get_text().strip()
+        try:
+            first_appearance = soup.find("div", attrs={"data-source": "first"}).find("div")
+            [sup.extract() for sup in first_appearance.find_all("sup")]
+            first_appearance = first_appearance.get_text().strip()
+        except AttributeError:
+            first_appearance = "Нет данных"
 
-        images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
-        if images_src:
-            images_src = images_src.find_all("a", class_="image")
-            images_src = [img.get("href") for img in images_src]
-        else:
-            images_src = soup.find("a", class_="image")
-            images_src = [images_src.get("href")]
+        try:
+            region = soup.find("div", attrs={"data-source": "region"}).find("div")
+            [sup.extract() for sup in region.find_all("sup")]
+            region = region.get_text().strip()
+        except AttributeError:
+            region = "Нет данных"
 
-        images = [requests.get(url).content for url in images_src[:max_images]]
+        try:
+            images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
+            if images_src:
+                images_src = images_src.find_all("a", class_="image")
+                images_src = [img.get("href") for img in images_src]
+            else:
+                images_src = soup.find("a", class_="image")
+                images_src = [images_src.get("href")]
+
+            images = [requests.get(url).content for url in images_src[:max_images]]
+        except AttributeError:
+            images = [""]
 
         place = Place(name=name, jap_name=jap_name, first_appearance=first_appearance, region=region, images=images)
 
@@ -169,24 +211,33 @@ class Parser:
         r = requests.get(article.url)
         soup = bs(r.text, "html.parser")
 
-        # name = soup.find("h1", attrs={"id": "firstHeading"}).get_text().strip()
-        name = soup.find("h2", attrs={"data-source": "name"})
+        try:
+            name = soup.find("h2", attrs={"data-source": "name"})
 
-        if not name:
-            name = soup.find("h2", attrs={"data-source": "title"})
+            if not name:
+                name = soup.find("h2", attrs={"data-source": "title"})
 
-        name = name.get_text().strip()
-        jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+            name = name.get_text().strip()
+        except AttributeError:
+            name = "Нет данных"
 
-        images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
-        if images_src:
-            images_src = images_src.find_all("a", class_="image")
-            images_src = [img.get("href") for img in images_src]
-        else:
-            images_src = soup.find("a", class_="image")
-            images_src = [images_src.get("href")]
+        try:
+            jap_name = soup.find("div", attrs={"data-source": "jname"}).find("div").get_text().strip()
+        except AttributeError:
+            jap_name = "Нет данных"
 
-        images = [requests.get(url).content for url in images_src]
+        try:
+            images_src = soup.find("nav", attrs={"data-item-name": "gallery"})
+            if images_src:
+                images_src = images_src.find_all("a", class_="image")
+                images_src = [img.get("href") for img in images_src]
+            else:
+                images_src = soup.find("a", class_="image")
+                images_src = [images_src.get("href")]
+
+            images = [requests.get(url).content for url in images_src]
+        except AttributeError:
+            images = [""]
 
         object_ = SimpleObject(name=name, jap_name=jap_name, images=images)
 
