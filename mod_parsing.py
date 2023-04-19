@@ -27,41 +27,56 @@ async def parsing(update, context):
 
 async def parsing_character(update, context):
     await update.message.reply_text('Введите имя персонажа из One Piece!')
-    context.user_data['parsing_character'] = 1
 
 
+async def parsing_place(update, context):
+    await update.message.reply_text('Введите название места или острова из One Piece!')
 
 #----------------------------------------------------
 async def parsing_character_request(update, context):
     await update.message.reply_text('Подождите секундочку...')
     q = Parser().search_character_by_name(request=update.message.text)
-    text = f'Имя: {q.name}\n\n' \
-           f'Возраст: {q.age}\n\n' \
-           f'День рождения - {q.birth_date}\n\n' \
-           f'Должность: {q.occupations}\n\n' \
-           f'Первое появление: {q.first_appearance}\n\n' \
-           f'Место проживания: {q.residences}\n\n' \
-           f'Членские организации: {q.affiliations}\n\n'
     buttons = parsing_buttons(context)
     try:
-        open("./tmp.jpg", "wb").write(q.images[0])
-        await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
-    except IndexError:
-        await update.message.reply_text(text, reply_markup=buttons)
+        text = f'Имя: {q.name}\n\n' \
+               f'Возраст: {q.age}\n\n' \
+               f'День рождения - {q.birth_date}\n\n' \
+               f'Должность: {q.occupations}\n\n' \
+               f'Первое появление: {q.first_appearance}\n\n' \
+               f'Место проживания: {q.residences}\n\n' \
+               f'Членские организации: {q.affiliations}\n\n'
+        try:
+            open("./tmp.jpg", "wb").write(q.images[0])
+            await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
+        except IndexError:
+            await update.message.reply_text(text, reply_markup=buttons)
+    except Exception:
+        await update.message.reply_text('Прости, но мне не удалось найти что-то похожее.\n'\
+                                        'Я искал персонажа, попробуй найти это в другом модуле или '\
+                                        'попробуй воспользоваться случайными терминами!', reply_markup=buttons)
+    context.user_data.clear()
+    context.user_data['parsing_active'] = 1
     context.user_data['latest_mode'] = buttons
 
 async def parsing_place_request(update, context):
     await update.message.reply_text('Подождите секундочку...')
     q = Parser().search_place_by_name(request=update.message.text)
-    text = f'Имя: {q.name}\n\n' \
-           f'Первое появление: {q.first_appearance}\n\n' \
-           f'Регион: {q.region}\n\n'
     buttons = parsing_buttons(context)
     try:
-        open("./tmp.jpg", "wb").write(q.images[0])
-        await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
-    except IndexError:
-        await update.message.reply_text(text, reply_markup=buttons)
+        text = f'Место: {q.name}\n\n' \
+               f'Первое появление: {q.first_appearance}\n\n' \
+               f'Регион: {q.region}\n\n'
+        try:
+            open("./tmp.jpg", "wb").write(q.images[0])
+            await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
+        except IndexError:
+            await update.message.reply_text(text, reply_markup=buttons)
+    except Exception:
+        await update.message.reply_text('Прости, но мне не удалось найти что-то похожее.\n' \
+                                        'Я искал место, попробуй найти это в другом модуле или ' \
+                                        'попробуй воспользоваться случайными терминами!', reply_markup=buttons)
+    context.user_data.clear()
+    context.user_data['parsing_active'] = 1
     context.user_data['latest_mode'] = buttons
 
 
