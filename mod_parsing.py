@@ -39,6 +39,7 @@ async def parsing_character_request(update, context):
     buttons = parsing_buttons(context)
     try:
         text = f'Имя: {q.name}\n\n' \
+               f'Награда за голову: {q.bounty}\n\n' \
                f'Возраст: {q.age}\n\n' \
                f'День рождения - {q.birth_date}\n\n' \
                f'Должность: {q.occupations}\n\n' \

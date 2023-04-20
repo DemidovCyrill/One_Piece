@@ -78,6 +78,17 @@ class Parser:
             first_appearance = "Нет данных"
 
         try:
+            bounty = soup.find("div", attrs={"data-source": "bounty"}).find("div")
+            print(bounty)
+            x = bounty.__repr__()
+            bounty = x[x.find('"/></a></span>') + 14:x.find('<sup class="reference"')] + ' Белли'
+            #[sup.extract() for sup in bounty.find_next("sup") ]# .find("sup")]
+            #bounty = bounty.get_text().strip().split('[')[0] + ' Белли'
+        except AttributeError:
+            bounty = "Вне розыска"
+
+
+        try:
             occupations = soup.find("div", attrs={"data-source": "occupation"}).find("div")
             [sup.extract() for sup in occupations.find_all("sup")]
             occupations = occupations.get_text().strip()
@@ -127,7 +138,7 @@ class Parser:
 
         character = Character(name=name, jap_name=jap_name, first_appearance=first_appearance, occupations=occupations,
                               residences=residences, affiliations=affiliations, url=article.url, birth_date=birth_date,
-                              age=age, images=images)
+                              age=age, bounty=bounty, images=images)
         return character
 
     def search_character_by_name(self, request: str, max_images=1):

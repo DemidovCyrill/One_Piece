@@ -13,7 +13,7 @@ class SimpleObject:
 
 class Character(SimpleObject):
     def __init__(self, name, jap_name, first_appearance, occupations,
-                 residences, affiliations, url, birth_date, age, images):
+                 residences, affiliations, url, birth_date, age, bounty, images):
         super().__init__(name, jap_name, images)
 
         self.first_appearance = first_appearance
@@ -23,6 +23,7 @@ class Character(SimpleObject):
         self.url = url
         self.birth_date = birth_date
         self.age = age
+        self.bounty = bounty
 
 
 class Place(SimpleObject):
