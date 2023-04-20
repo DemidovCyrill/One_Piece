@@ -56,7 +56,7 @@ class Parser:
         if not any(filter(lambda tag: tag in tags.lower(), allowed_tags)):
             return
 
-        disallowed_tags = []
+        disallowed_tags = ["Мест", " Остров"]
         if any(filter(lambda tag: tag in tags.lower(), disallowed_tags)):
             return
 
@@ -255,7 +255,10 @@ class Parser:
         return object_
 
     def search_object(self, request: str):
-        article = self.search_articles(request, max_results=1)[0]
+        try:
+            article = self.search_articles(request, max_results=1)[0]
+        except Exception:
+            return 'No'
 
         character = self.get_character_info(article)
         if character:

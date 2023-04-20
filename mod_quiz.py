@@ -99,7 +99,7 @@ async def start_quiz(update, context):
     answers = quiz_db[num]['incorrect'].split()
     answers.append(quiz_db[num]['answer'])
     shuffle(answers)
-    keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup([answers, ['Выйти']], one_time_keyboard=True)
 
     await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
 
@@ -109,10 +109,13 @@ async def quiz_questions(update, context):
     # Получаем номер вопроса
     num = context.user_data['quiz_active']
     # Проверяем совподение с верным
+    if update.message.text == 'Выйти':
+        await quiz(update, context)
+        return
     if update.message.text == quiz_db[num]['answer']:
         # Сообщаем, что всё верно и начисляем баллы
         context.user_data['score'] += quiz_db[num]['exp']
-        await update.message.reply_text(choice(['Да, верно!', 'Обсалютно верно!',
+        await update.message.reply_text(choice(['Да, верно!', 'Абсолютно верно!',
                                                 'За этот ответ вы заслуживаете баллы!',
                                                 'Как вам это удаётся?! Начисляю баллы!']))
     else:
@@ -151,7 +154,7 @@ async def quiz_questions(update, context):
     answers = quiz_db[num]['incorrect'].split()
     answers.append(quiz_db[num]['answer'])
     shuffle(answers)
-    keyboard = ReplyKeyboardMarkup([answers, ['/help']], one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup([answers, ['Выйти']], one_time_keyboard=True)
 
     await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
 

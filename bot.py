@@ -1,6 +1,6 @@
 import logging
 import sqlite3
-from random import choice, shuffle
+from random import choice
 
 
 import requests
@@ -14,7 +14,8 @@ from mod_fruit import previous, next_fruit, random_fruit, check_in_data
 from mod_quiz import quiz, rename, start_quiz, quiz_statistic, quiz_questions
 
 from mod_parsing import parsing, parsing_character, parsing_character_request, \
-    keyboard_of_random_buttons, parsing_place_request, parsing_place
+    keyboard_of_random_buttons, parsing_place_request, parsing_place, prepared_words, \
+    parsing_simple_object, parsing_simple_object_request
 
 #from bot_token import BOT_TOKEN
 BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
@@ -182,6 +183,9 @@ async def users_text(update, context):
         if 'place_active' in context.user_data:
             await parsing_place_request(update, context)
             return
+        if 'simple_object_active' in context.user_data:
+            await parsing_simple_object_request(update, context)
+            return
         if update.message.text == 'Персонаж':
             await parsing_character(update, context)
             context.user_data['character_active'] = 1
@@ -190,8 +194,12 @@ async def users_text(update, context):
             await parsing_place(update, context)
             context.user_data['place_active'] = 1
             return
-        if update.message.text == 'случайный':
-            await help(update, context)
+        if update.message.text in prepared_words:
+            await parsing_simple_object_request(update, context)
+            return
+        if update.message.text == 'Найти другой объект':
+            await parsing_simple_object(update, context)
+            context.user_data['simple_object_active'] = 1
             return
         if update.message.text == 'Другие случайные':
             await keyboard_of_random_buttons(update, context)
@@ -215,14 +223,37 @@ async def help(update, context):
     await update.message.reply_text(
         'Здравствуйте, я бот-инциклопедя по One Piece!\n'
         '\n'
-        '/fruit - узнать про любой фрукт;\n'
-        '/parsing - задать интересующие вопросы (нет);\n'
-        '/quiz - сыграть со мной в наинтерснейшую викторину (+-);\n'
+        'Фрукты - узнать про любой фрукт;\n'
+        'Поиск - задать интересующие вопросы;\n'
+        'Викторина - сыграть со мной в наинтерснейшую викторину;\n'
         '\n'
-        'На этом пока что всё, сейчас ведётся активная разработка!', reply_markup=main_buttons)
+        'Надеюсь, вам всё понравится!', reply_markup=main_buttons)
 
     context.user_data['latest_mode'] = main_buttons
 
+
+async def start(update, context):
+
+    """ Функция приветствия с полизоватилем, она запускается при активации бота"""
+
+    context.user_data.clear()
+    context.user_data['latest_mode'] = start_keyboard
+
+    await update.message.reply_text(
+        'Ура, наконец-то вы здесь! Я очень рад вас видеть! \n'
+        'Спешу представиться, я бот-энциклопедия по Величайшему сериалу One Piece!\n'
+        '\n'
+        'Я могу вас тешить и радовать, а именно:\n'
+        '  Фрукты - узнать про любой фрукт;\n'
+        '  Поиск - задать интересующие вопросы;\n'
+        '  Викторина - сыграть со мной в наинтерснейшую викторину;\n'
+        '\n'
+        'Должен предупредить, я работаю только в этих режимах, в одном режиме нельзя '
+        'пользоваться данными второго режима.\n'
+        'Так что если хотите поменять режим, выйдите из данного режима с помощью '
+        'кнопки “назад”. И да, сейчас вы не активировали ни один из режимов, так чего же вы ждёте?!', reply_markup=main_buttons)
+
+    context.user_data['latest_mode'] = main_buttons
 
 def main():
     # application.add_handler(conv_handler)
@@ -232,7 +263,7 @@ def main():
     application.add_handler(CommandHandler('quiz', quiz))
     application.add_handler(CommandHandler('fruit', fruit))
     application.add_handler(CommandHandler('parsing', parsing))
-    application.add_handler(CommandHandler('start', help))
+    application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('fruit_statistics', fruit_statistics))
     application.add_handler(CommandHandler('fruit_line_in_order', fruit_line_in_order))
     application.add_handler(CommandHandler('previous', previous))
