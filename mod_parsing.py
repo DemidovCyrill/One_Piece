@@ -5,7 +5,7 @@ import objects
 from parser import Parser
 from telegram import ReplyKeyboardMarkup
 
-prepared_words = ['Луффи', 'Эйс', 'Роджер',
+prepared_words = ['Луффи', 'Эйс', 'Гол Д. Роджер',
                   'Нами', 'Зоро', 'Брук',
                   'Эльбаф', 'Реверс Маунтин', 'Остров Кактус',
                   'Страна Вано', 'Дзо', 'Скайпия', 'Зунеша',
