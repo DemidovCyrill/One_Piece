@@ -82,9 +82,9 @@ async def quiz_statistic(update, context):
         mas.append(i)
         #await update.message.reply_text(f'{i}')
     mas = sorted(mas, key=lambda x: x[2] * (-1))
-    text_statistic = 'Топ 3 лучших игроков:'
-    for i in range(3):
-        text_statistic += f'\n{i + 1}-е место: {mas[i][1]} - {mas[i][2]} балл!'
+    text_statistic = 'Топ 5 лучших игроков:'
+    for i in range(5):
+        text_statistic += f'\n{i + 1}-е место: {mas[i][1]} - {mas[i][2]} баллов!'
     await update.message.reply_text(text_statistic, reply_markup=start_keyboard)
     context.user_data['latest_mode'] = start_keyboard
 
