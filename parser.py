@@ -3,6 +3,7 @@ import requests
 
 from objects import *
 
+
 class Parser:
     def __init__(self, lang: str = "ru"):
         self.url = 'https://onepiece.fandom.com/%lang/wiki/Служебная:Поиск?query=%req'
