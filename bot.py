@@ -16,8 +16,8 @@ from mod_parsing import parsing, parsing_character, parsing_character_request, \
     keyboard_of_random_buttons, parsing_place_request, parsing_place, prepared_words, \
     parsing_simple_object, parsing_simple_object_request
 
-# from bot_token import BOT_TOKEN
-BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
+from bot_token import BOT_TOKEN
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
