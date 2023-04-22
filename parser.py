@@ -83,6 +83,7 @@ class Parser:
             bounty = bounty_raw.get_text().strip()
             for sup in bounty_raw.find_all("sup", class_="reference"):
                 bounty = bounty.replace(sup.get_text(), "; ")
+            bounty = bounty.split(";")[0].strip() + " Белли"
         except AttributeError:
             bounty = "Вне розыска"
 
