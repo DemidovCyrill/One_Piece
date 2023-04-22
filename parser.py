@@ -32,7 +32,7 @@ class Parser:
             articles.append(article)
 
         search_results = soup.find_all("li", class_="unified-search__result")
-        search_results = search_results[:max_results - len(articles)]\
+        search_results = search_results[:max_results - len(articles)] \
             if len(search_results) > max_results else search_results
 
         for result in search_results:
@@ -79,12 +79,10 @@ class Parser:
             first_appearance = "Нет данных"
 
         try:
-            bounty = soup.find("div", attrs={"data-source": "bounty"}).find("div")
-            print(bounty)
-            x = bounty.__repr__()
-            bounty = x[x.find('"/></a></span>') + 14:x.find('<sup class="reference"')] + ' Белли'
-            #[sup.extract() for sup in bounty.find_next("sup") ]# .find("sup")]
-            #bounty = bounty.get_text().strip().split('[')[0] + ' Белли'
+            bounty_raw = soup.find("div", attrs={"data-source": "bounty"}).find("div")
+            bounty = bounty_raw.get_text().strip()
+            for sup in bounty_raw.find_all("sup", class_="reference"):
+                bounty = bounty.replace(sup.get_text(), "; ")
         except AttributeError:
             bounty = "Вне розыска"
 
@@ -130,7 +128,11 @@ class Parser:
                 images_src = images_src.find_all("a", class_="image")
                 images_src = [img.get("href") for img in images_src]
             else:
-                images_src = soup.find("a", class_="image")
+                images_src = soup.find("a", class_="image-thumbnail")
+
+                if not images_src:
+                    images_src = soup.find("a", class_="image")
+
                 images_src = [images_src.get("href")]
 
             images = [requests.get(url).content for url in images_src[:max_images]]
@@ -197,7 +199,11 @@ class Parser:
                 images_src = images_src.find_all("a", class_="image")
                 images_src = [img.get("href") for img in images_src]
             else:
-                images_src = soup.find("a", class_="image")
+                images_src = soup.find("a", class_="image-thumbnail")
+
+                if not images_src:
+                    images_src = soup.find("a", class_="image")
+
                 images_src = [images_src.get("href")]
 
             images = [requests.get(url).content for url in images_src[:max_images]]
@@ -244,7 +250,11 @@ class Parser:
                 images_src = images_src.find_all("a", class_="image")
                 images_src = [img.get("href") for img in images_src]
             else:
-                images_src = soup.find("a", class_="image")
+                images_src = soup.find("a", class_="image-thumbnail")
+
+                if not images_src:
+                    images_src = soup.find("a", class_="image")
+
                 images_src = [images_src.get("href")]
 
             images = [requests.get(url).content for url in images_src]
@@ -258,8 +268,10 @@ class Parser:
     def search_object(self, request: str):
         try:
             article = self.search_articles(request, max_results=1)[0]
-        except Exception:
-            return 'No'
+        except Exception as e:
+            print(e)
+
+            return
 
         character = self.get_character_info(article)
         if character:

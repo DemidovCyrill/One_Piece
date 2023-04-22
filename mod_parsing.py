@@ -1,6 +1,4 @@
 from random import randint
-import sqlite3
-import requests
 import objects
 from parser import Parser
 from telegram import ReplyKeyboardMarkup
@@ -12,11 +10,14 @@ prepared_words = ['Луффи', 'Эйс', 'Гол Д. Роджер',
                   'Пираты Сердца', 'Эмма', 'Соломенная шляпа',
                   'Дэн Дэн Муси', 'Морской Король', 'MADS', 'Рамбл Болл']
 
+
 def parsing_buttons(context):
     prepared_words_interim = context.user_data['prepared_words_interim'] = prepared_words[:]
-    parsing_keyboard = [['Персонаж', 'Место'], [prepared_words_interim[randint(0, len(prepared_words_interim) - 1)] , 'Другие случайные'],
+    parsing_keyboard = [['Персонаж', 'Место'],
+                        [prepared_words_interim[randint(0, len(prepared_words_interim) - 1)], 'Другие случайные'],
                         ['Найти другой объект', 'Назад']]
     return ReplyKeyboardMarkup(parsing_keyboard, one_time_keyboard=True)
+
 
 async def parsing(update, context):
     buttons = parsing_buttons(context)
@@ -35,18 +36,20 @@ async def parsing(update, context):
     context.user_data['parsing'] = 1
     context.user_data['latest_mode'] = buttons
 
-async def parsing_character(update, context):
+
+async def parsing_character(update, _context):
     await update.message.reply_text('Введите имя персонажа из One Piece!')
 
 
-async def parsing_place(update, context):
+async def parsing_place(update, _context):
     await update.message.reply_text('Введите название места или острова из One Piece!')
 
 
-async def parsing_simple_object(update, context):
+async def parsing_simple_object(update, _context):
     await update.message.reply_text('Введите ваш запрос из вселеной One Piece!')
 
-#----------------------------------------------------
+
+# ----------------------------------------------------
 async def parsing_character_request(update, context):
     await update.message.reply_text('Подождите секундочку...')
     q = Parser().search_character_by_name(request=update.message.text)
@@ -65,13 +68,16 @@ async def parsing_character_request(update, context):
             await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
         except IndexError:
             await update.message.reply_text(text, reply_markup=buttons)
-    except Exception:
-        await update.message.reply_text('Прости, но мне не удалось найти что-то похожее.\n'\
-                                        'Я искал персонажа, попробуй найти это в другом модуле или '\
+    except Exception as e:
+        print(e)
+
+        await update.message.reply_text('Прости, но мне не удалось найти что-то похожее.\n' \
+                                        'Я искал персонажа, попробуй найти это в другом модуле или ' \
                                         'попробуй воспользоваться случайными терминами!', reply_markup=buttons)
     context.user_data.clear()
     context.user_data['parsing_active'] = 1
     context.user_data['latest_mode'] = buttons
+
 
 async def parsing_place_request(update, context):
     await update.message.reply_text('Подождите секундочку...')
@@ -86,7 +92,9 @@ async def parsing_place_request(update, context):
             await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
         except IndexError:
             await update.message.reply_text(text, reply_markup=buttons)
-    except Exception:
+    except Exception as e:
+        print(e)
+
         await update.message.reply_text('Прости, но мне не удалось найти что-то похожее.\n' \
                                         'Я искал место, попробуй найти это в другом модуле или ' \
                                         'попробуй воспользоваться случайными терминами!', reply_markup=buttons)
@@ -119,9 +127,11 @@ async def parsing_simple_object_request(update, context):
             await update.message.reply_photo(photo="./tmp.jpg", caption=text, reply_markup=buttons)
         except IndexError:
             await update.message.reply_text(text, reply_markup=buttons)
-    except Exception:
+    except Exception as e:
+        print(e)
+
         await update.message.reply_text('Прости, но мне не удалось найти что-то похожее.\n' \
-                                        'Это странно, ведь я искал вообще все объекты,'\
+                                        'Это странно, ведь я искал вообще все объекты,' \
                                         ' попробуй найти это в другом модуле или ' \
                                         'попробуй воспользоваться случайными терминами!', reply_markup=buttons)
     context.user_data.clear()
@@ -130,9 +140,12 @@ async def parsing_simple_object_request(update, context):
 
 
 def q(context):
-    return context.user_data['prepared_words_interim'].pop(randint(0, len(context.user_data['prepared_words_interim']) - 1))
+    return context.user_data['prepared_words_interim'].pop(
+        randint(0, len(context.user_data['prepared_words_interim']) - 1))
+
+
 async def keyboard_of_random_buttons(update, context):
-    prepared_words_interim = context.user_data['prepared_words_interim'] = prepared_words[:]
+    # prepared_words_interim = context.user_data['prepared_words_interim'] = prepared_words[:]
     many_random_buttons = [[q(context), q(context)], [q(context), q(context)], ['Другие случайные', 'Назад']]
     many_random_buttons = ReplyKeyboardMarkup(many_random_buttons, one_time_keyboard=True)
     await update.message.reply_text('Выберите из предложенного', reply_markup=many_random_buttons)

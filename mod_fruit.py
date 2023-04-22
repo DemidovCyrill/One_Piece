@@ -4,11 +4,11 @@ import requests
 from telegram import ReplyKeyboardMarkup
 
 fruits_db = requests.get(
-    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls')\
+    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls') \
     .json()
 
 quiz_db = requests.get(
-    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls')\
+    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls') \
     .json()
 
 BASE = sqlite3.connect('clients.db')
@@ -27,7 +27,6 @@ fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyb
 start_keyboard = [['Начать'], ['Поменять имя'], ['Результаты']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
-
 ''' В этой переменной хранится значения последней вызываемой клавиатуры у пользователя
 будет складываться ощущение, что он находится в отдельном режиме '''
 
@@ -39,8 +38,8 @@ def check_in_data(text):
                 return True, fruits_db.index(ii)
     return False, -1
 
-async def fruit(update, context):
 
+async def fruit(update, context):
     """ Эта функция работает как главный экран режима фруктов """
 
     # берём айди пользователя и если он новый, то просто заносим его в БД
@@ -89,7 +88,6 @@ async def random_fruit(update, context):
     context.user_data['latest_mode'] = fruit_buttons
 
 
-
 async def fruit_line_in_order(update, context):
     try:
         x = fruits_db[context.user_data['number_fruit_in_order']]['name']
@@ -124,6 +122,7 @@ async def next_fruit(update, context):
 async def previous(update, context):
     context.user_data['number_fruit_in_order'] = (context.user_data['number_fruit_in_order'] - 1) % len(fruits_db)
     await fruit_line_in_order(update, context)
+
 
 async def fruit_statistics(update, context):
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])

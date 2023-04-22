@@ -4,11 +4,11 @@ import requests
 from telegram import ReplyKeyboardMarkup
 
 fruits_db = requests.get(
-    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls')\
+    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls') \
     .json()
 
 quiz_db = requests.get(
-    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls')\
+    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls') \
     .json()
 
 BASE = sqlite3.connect('clients.db')
@@ -21,11 +21,8 @@ start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 reply_keyboard = [['Фрукты'], ['Поиск'], ['Викторина']]
 main_buttons = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
-
-
 ''' В этой переменной хранится значения последней вызываемой клавиатуры у пользователя
 будет складываться ощущение, что он находится в отдельном режиме '''
-
 
 
 async def quiz(update, context):
@@ -80,13 +77,14 @@ async def quiz_statistic(update, context):
     mas = []
     for i in cursor:
         mas.append(i)
-        #await update.message.reply_text(f'{i}')
+        # await update.message.reply_text(f'{i}')
     mas = sorted(mas, key=lambda x: x[2] * (-1))
     text_statistic = 'Топ 5 лучших игроков:'
     for i in range(5):
         text_statistic += f'\n{i + 1}-е место: {mas[i][1]} - {mas[i][2]} баллов!'
     await update.message.reply_text(text_statistic, reply_markup=start_keyboard)
     context.user_data['latest_mode'] = start_keyboard
+
 
 async def start_quiz(update, context):
     if 'quiz_active' not in context.user_data:
@@ -104,6 +102,7 @@ async def start_quiz(update, context):
     await update.message.reply_text(f'{num + 1}-й вопрос: \n \n' + quiz_db[num]['question'], reply_markup=keyboard)
 
     context.user_data['latest_mode'] = keyboard
+
 
 async def quiz_questions(update, context):
     # Получаем номер вопроса

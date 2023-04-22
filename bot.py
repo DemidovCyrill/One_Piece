@@ -2,7 +2,6 @@ import logging
 import sqlite3
 from random import choice
 
-
 import requests
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters
@@ -17,21 +16,19 @@ from mod_parsing import parsing, parsing_character, parsing_character_request, \
     keyboard_of_random_buttons, parsing_place_request, parsing_place, prepared_words, \
     parsing_simple_object, parsing_simple_object_request
 
-#from bot_token import BOT_TOKEN
+# from bot_token import BOT_TOKEN
 BOT_TOKEN = '6048853518:AAFE1tEkAVFrJHw8YE8Rw3IYxuZmXo9fCyw'
-
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
 fruits_db = requests.get(
-    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls')\
+    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист1&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls') \
     .json()
 
 quiz_db = requests.get(
-    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls')\
+    'https://tools.aimylogic.com/api/googlesheet2json?sheet=Лист2&id=1-OMbqWih_VlXwhKJt_hOPEqD1-CH3zNsYh13Kc05nls') \
     .json()
 
 ''' далее описываются статические клавиатуры '''
@@ -47,16 +44,12 @@ fruit_random_keyboard = ReplyKeyboardMarkup(fruit_random_keyboard, one_time_keyb
 start_keyboard = [['Начать!'], ['Переименоваться'], ['Статистика'], ['Назад']]
 start_keyboard = ReplyKeyboardMarkup(start_keyboard, one_time_keyboard=True)
 
-
 ''' В этой переменной хранится значения последней вызываемой клавиатуры у пользователя
 будет складываться ощущение, что он находится в отдельном режиме '''
-
-
 
 # загрузка базы данных
 BASE = sqlite3.connect('clients.db')
 C = BASE.cursor()
-
 
 ''' Если база данных фруктов (гугл таблца) была дополнена, то не нужно вручную
 в программе всё менять здесь поисходит дополнение столбцов '''
@@ -69,7 +62,6 @@ C.execute('''CREATE TABLE IF NOT EXISTS orders(token INT, record TEXT''' + str_e
 
 BASE.commit()
 
-
 # Ответы на незапланированные запросы пользователя
 echo_data = ['Простите, но я не понимаю что вы говорите...',
              'Надо же, не знал что это есть в мире One Piece!',
@@ -80,37 +72,44 @@ echo_data = ['Простите, но я не понимаю что вы гово
 
 
 async def users_text(update, context):
-
     """ Функция, которая отвечает на все незапланированные запросы пользователя
     Она также может быть вызвана в любое время режима, не повлияв на него, ведь
     вконце мы возврещаем набор кнопок latest_mode, который хранит последний вызов клавиатуры """
 
     if context.user_data == {}:
         context.user_data['latest_mode'] = main_buttons
+
     if update.message.text == 'Фрукты':
         await fruit(update, context)
         return
+
     if update.message.text == 'Поиск':
         await parsing(update, context)
         context.user_data['parsing_active'] = 1
         return
+
     if update.message.text == 'Викторина':
         await quiz(update, context)
         return
+
     if 'fruit_active' in context.user_data:
         if update.message.text == 'Случайный фрукт':
             await random_fruit(update, context)
             return
+
         if update.message.text == 'Фрукты по порядку':
             context.user_data.clear()
             await fruit_line_in_order(update, context)
             return
+
         if update.message.text == 'Статистика':
             await fruit_statistics(update, context)
             return
+
         if update.message.text == 'Назад':
-            await help(update, context)
+            await help_(update, context)
             return
+
         flag, index = check_in_data(update.message.text)
         if flag:
             id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
@@ -133,18 +132,22 @@ async def users_text(update, context):
                                         ' из предложенных кнопок!', reply_markup=fruit_buttons)
         context.user_data['latest_mode'] = fruit_buttons
         return
+
     if 'number_fruit_in_order' in context.user_data:
         if update.message.text == '←':
             await previous(update, context)
             return
+
         if update.message.text == '→':
             await next_fruit(update, context)
             return
+
         if update.message.text == 'Назад':
             await fruit(update, context)
             context.user_data.clear()
             context.user_data['fruit_active'] = 1
             return
+
     if 'quiz_name' in context.user_data:
         id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
         C.execute(f'''Update quiz_table set name = '{update.message.text}' where token = {id_user}''')
@@ -158,62 +161,74 @@ async def users_text(update, context):
         context.user_data['latest_mode'] = start_keyboard
         context.user_data['quiz'] = 0
         return
-    #Это Режим викторины
+
+    # Это Режим викторины
     if 'quiz' in context.user_data:
         if update.message.text == 'Назад':
-            await help(update, context)
+            await help_(update, context)
             return
+
         if update.message.text == 'Начать!':
-            print('started')
             await start_quiz(update, context)
             return
+
         if update.message.text == 'Переименоваться':
             await rename(update, context)
             return
+
         if update.message.text == 'Статистика':
             await quiz_statistic(update, context)
             return
+
     if 'quiz_active' in context.user_data:
         await quiz_questions(update, context)
         return
+
     if 'parsing_active' in context.user_data:
         if 'character_active' in context.user_data:
             await parsing_character_request(update, context)
             return
+
         if 'place_active' in context.user_data:
             await parsing_place_request(update, context)
             return
+
         if 'simple_object_active' in context.user_data:
             await parsing_simple_object_request(update, context)
             return
+
         if update.message.text == 'Персонаж':
             await parsing_character(update, context)
             context.user_data['character_active'] = 1
             return
+
         if update.message.text == 'Место':
             await parsing_place(update, context)
             context.user_data['place_active'] = 1
             return
+
         if update.message.text in prepared_words:
             await parsing_simple_object_request(update, context)
             return
+
         if update.message.text == 'Найти другой объект':
             await parsing_simple_object(update, context)
             context.user_data['simple_object_active'] = 1
             return
+
         if update.message.text == 'Другие случайные':
             await keyboard_of_random_buttons(update, context)
             return
+
         if update.message.text == 'Назад':
             context.user_data.clear()
-            await help(update, context)
+            await help_(update, context)
             return
 
     await update.message.reply_text(choice(echo_data), reply_markup=context.user_data['latest_mode'])
 
 
-async def help(update, context):
-
+async def help_(update, context):
     """ Функция приветствия с полизоватилем, а также
     эта функция работает как главный экран режимов """
 
@@ -233,7 +248,6 @@ async def help(update, context):
 
 
 async def start(update, context):
-
     """ Функция приветствия с полизоватилем, она запускается при активации бота"""
 
     context.user_data.clear()
@@ -251,15 +265,17 @@ async def start(update, context):
         'Должен предупредить, я работаю только в этих режимах, в одном режиме нельзя '
         'пользоваться данными второго режима.\n'
         'Так что если хотите поменять режим, выйдите из данного режима с помощью '
-        'кнопки “назад”. И да, сейчас вы не активировали ни один из режимов, так чего же вы ждёте?!', reply_markup=main_buttons)
+        'кнопки “назад”. И да, сейчас вы не активировали ни один из режимов, так чего же вы ждёте?!',
+        reply_markup=main_buttons)
 
     context.user_data['latest_mode'] = main_buttons
+
 
 def main():
     # application.add_handler(conv_handler)
     application = Application.builder().token(BOT_TOKEN).build()
 
-    application.add_handler(CommandHandler('help', help))
+    application.add_handler(CommandHandler('help', help_))
     application.add_handler(CommandHandler('quiz', quiz))
     application.add_handler(CommandHandler('fruit', fruit))
     application.add_handler(CommandHandler('parsing', parsing))
@@ -283,4 +299,3 @@ def main():
 # Запускаем функцию main() в случае запуска скрипта.
 if __name__ == '__main__':
     main()
-
