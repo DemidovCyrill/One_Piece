@@ -145,7 +145,7 @@ def q(context):
 
 
 async def keyboard_of_random_buttons(update, context):
-    # prepared_words_interim = context.user_data['prepared_words_interim'] = prepared_words[:]
+    prepared_words_interim = context.user_data['prepared_words_interim'] = prepared_words[:]
     many_random_buttons = [[q(context), q(context)], [q(context), q(context)], ['Другие случайные', 'Назад']]
     many_random_buttons = ReplyKeyboardMarkup(many_random_buttons, one_time_keyboard=True)
     await update.message.reply_text('Выберите из предложенного', reply_markup=many_random_buttons)
