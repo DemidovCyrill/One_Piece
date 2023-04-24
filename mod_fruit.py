@@ -53,7 +53,7 @@ async def fruit(update, context):
         names = list(map(lambda x: x[0], cursor.description))
 
         C.execute(f'''INSERT INTO orders({', '.join(names)})
-           VALUES('{id_user}'{', 0' * (len(fruits_db) + 1)});''')
+           VALUES('{id_user}'{', 0' * (len(fruits_db) + 3)});''')
 
         BASE.commit()
         context.user_data['number_fruit_in_order'] = 0
