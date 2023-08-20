@@ -7,7 +7,7 @@ from telegram import ReplyKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters
 from telegram.ext import CommandHandler
 
-from mod_fruit import fruit, fruit_statistics, fruit_line_in_order
+from mod_fruit import fruit, fruit_statistics, fruit_line_in_order, check_name
 from mod_fruit import previous, next_fruit, random_fruit, check_in_data
 
 from mod_quiz import quiz, rename, start_quiz, quiz_statistic, quiz_questions
@@ -149,6 +149,8 @@ async def users_text(update, context):
             return
 
     if 'quiz_name' in context.user_data:
+        if await check_name(update.message.text, update):
+            return
         id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
         C.execute(f'''Update quiz_table set name = '{update.message.text}' where token = {id_user}''')
         BASE.commit()

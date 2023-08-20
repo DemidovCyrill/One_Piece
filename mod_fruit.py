@@ -72,7 +72,7 @@ async def fruit(update, context):
 
 
 async def random_fruit(update, context):
-    range_ = randint(1, len(fruits_db) - 1)
+    range_ = randint(0, len(fruits_db)) + 1
     id_user = int(list(filter(lambda x: x[:3] == 'id=', str(update).split()))[-1][3:-1])
 
     C.execute(f'select f_{range_} from orders where token={id_user}')
@@ -151,3 +151,21 @@ async def fruit_statistics(update, context):
     await update.message.reply_text(message, reply_markup=fruit_buttons)
 
     context.user_data['latest_mode'] = fruit_buttons
+
+
+async def check_name(text, update):
+    if len(text) > 10:
+        await update.message.reply_text(
+            f'Ваш никнейм хорош, только слишком длинный...\n'
+            f'Придумайте другое имя, только не больше 10-ти символов!')
+        return True
+    text = text.lower()
+    bad_words = ['пенис', 'очко', 'мам', 'хуй', 'пидор', 'бля', 'сос', 'сук',
+                 'еб', 'чмо', 'хох', 'ёб', 'член', 'сперм']
+    for i in bad_words:
+        if i in text:
+            await update.message.reply_text(
+                f'Ой как смешно, подходящее для вас имя, конечно.\n'
+                f'Придумайте другое имя, только без этих ужасных слов, фу!')
+            return True
+    return False
